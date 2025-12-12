@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="Comment.Core/Comment.Core.csproj" />
+  <Project Path="Comment.Infrastructure/Comment.Infrastructure.csproj" Id="f95a4bfc-1232-4329-bcb3-85081d833cef" />
   <Project Path="CommentAPI/CommentAPI.csproj" />
 </Solution>
