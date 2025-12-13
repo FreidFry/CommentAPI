@@ -2,18 +2,34 @@
 
 namespace Comment.Core.Persistence
 {
-    public class CommentModel(string content, Guid threadId, UserModel user, Guid? parentCommentId = null)
+    public class CommentModel
     {
+
         public Guid Id { get; private set; }
-        public string Content { get; private set; } = content;
+        public string Content { get; private set; }
         public DateTime CreatedAt { get; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; private set; }
         public bool IsDeleted { get; private set; } = false;
-        public Guid ThreadId { get; } = threadId;
+        public bool IsBaned { get; private set; } = false;
+        public Guid ThreadId { get; }
 
-        public Guid? ParentCommentId { get; } = parentCommentId;
-        [JsonIgnore] public UserModel User { get; } = user;
-        public Guid UserId { get; } = user.Id;
+        public Guid? ParentCommentId { get; }
+        [JsonIgnore] public UserModel User { get; }
+        public Guid UserId { get; }
+
+        public CommentModel(string content, Guid threadId, UserModel user, Guid? parentCommentId = null)
+        {
+            Content = content;
+            ThreadId = threadId;
+            ParentCommentId = parentCommentId;
+            User = user;
+            UserId = user.Id;
+        }
+
+        public CommentModel()
+        {
+            
+        }
 
         public void UpdateContent(string newContent)
         {

@@ -2,7 +2,7 @@
 
 namespace Comment.Core.Interfaces
 {
-    public interface IFileStorage
+    public interface IFileProvider
     {
         Task DeleteFileAsync(string filePath);
         bool FileExists(string filePath);
