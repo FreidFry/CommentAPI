@@ -1,0 +1,11 @@
+services:
+  commentapi:
+    image: ${DOCKER_REGISTRY-}commentapi
+    build:
+      context: .
+      dockerfile: CommentAPI/Dockerfile
+    environment:
+      SECRET_KEY: "YAMETEKIDASAIIIIYAMETEKIDASAIIII"
+      ISSUER: "BACK"
+      AUDIENCE: "FRONT"
+      EXPIRES_DAYS: "3"

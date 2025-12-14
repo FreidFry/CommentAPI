@@ -1,10 +1,11 @@
-﻿using Comment.Infrastructure.Extensions;
+﻿using Comment.Core.Interfaces;
+using Comment.Infrastructure.Extensions;
 using Comment.Infrastructure.Services.Auth.DTOs;
 using RestSharp;
 
 namespace Comment.Infrastructure.Storages
 {
-    public class TokenStorage
+    public class TokenStorage : ITokenStorage
     {
         string AccessToken = string.Empty;
         string RefreshToken = string.Empty;

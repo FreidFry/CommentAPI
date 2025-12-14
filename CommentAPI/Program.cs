@@ -1,5 +1,7 @@
 using Comment.Core.Data;
 using Comment.Core.Interfaces;
+using Comment.Infrastructure.Maps;
+using CommentAPI.Extencions.LoadModules;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +23,13 @@ builder.Services.AddResponseCompression(options =>
 });
 
 builder.Services.AddControllers();
+
+builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(UserMapProfile), typeof(ThreadsMapProfile), typeof(CommentMapProfile)));
+
+builder.Services.AddDipedencyInjections();
+
+var jwtOptions = new JwtOptions(builder.Configuration);
+builder.Services.AddJwtAuthentication(jwtOptions);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));

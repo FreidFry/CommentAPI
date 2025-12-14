@@ -6,7 +6,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
 using System.Security.Claims;
+using static System.Net.WebRequestMethods;
 
 namespace Comment.Infrastructure.Services.Auth
 {
@@ -15,19 +17,19 @@ namespace Comment.Infrastructure.Services.Auth
         private readonly AppDbContext _appDbContext;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IJwtProvider _jwtProvider;
-        private readonly ApiOptions _envOptions;
+        private readonly IJwtOptions _envOptions;
 
-        public AuthService(AppDbContext appDbContext, IPasswordHasher passwordHasher, IJwtProvider jwtProvider, IOptions<ApiOptions> envOptions)
+        public AuthService(AppDbContext appDbContext, IPasswordHasher passwordHasher, IJwtProvider jwtProvider, IJwtOptions envOptions)
         {
             _appDbContext = appDbContext;
             _passwordHasher = passwordHasher;
             _jwtProvider = jwtProvider;
-            _envOptions = envOptions.Value;
+            _envOptions = envOptions;
         }
 
         public async Task<IActionResult> RegisterAsync(UserRegisterDto UserDto, HttpContext httpContext, CancellationToken cancellationToken)
         {
-            if (UserDto.Password.Equals(UserDto.ConfirmPassword))
+            if (!UserDto.Password.Equals(UserDto.ConfirmPassword))
                 return new BadRequestObjectResult("Passwords do not match");
             var existingUser = await _appDbContext.Users
                 .FirstOrDefaultAsync(u => u.UserName == UserDto.UserName, cancellationToken);
@@ -80,7 +82,12 @@ namespace Comment.Infrastructure.Services.Auth
             var token = _jwtProvider.GenerateToken(user);
             var expiration = DateTimeOffset.UtcNow.AddDays(_envOptions.ExpiresDays);
 
-            http.Response.Cookies.Append("jwt", token, new CookieOptions
+            AppendCookie(http, "jwt", token, expiration);
+        }
+
+        void AppendCookie(HttpContext http, string id, string value, DateTimeOffset? expiration)
+        {
+            http.Response.Cookies.Append(id, value, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
