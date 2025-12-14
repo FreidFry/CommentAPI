@@ -4,7 +4,7 @@ using Comment.Core.Persistence;
 using Comment.Infrastructure.Services.User.DTOs.Request;
 using Comment.Infrastructure.Services.User.DTOs.Response;
 
-namespace Comment.Infrastructure.Maps.UserMaps
+namespace Comment.Infrastructure.Maps
 {
     public class UserMapProfile : Profile
     {

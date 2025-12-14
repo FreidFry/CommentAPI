@@ -13,23 +13,25 @@ namespace Comment.Infrastructure.Services.User
 {
     public class UserService : IUserService
     {
-        private readonly AppDbContext _AppDbContext;
-        private readonly IFileStorage _fileStorage;
+        private readonly AppDbContext _appDbContext;
+        private readonly IFileProvider _fileStorage;
         private readonly IValidator<UserUpdateAvatarDTO> _avatarValidator;
+        private readonly IValidator<UserFindDto> _userFindValidator;
         private readonly IMapper _mapper;
 
-        public UserService(AppDbContext appDbContext, IFileStorage fileStorage, IValidator<UserUpdateAvatarDTO> avatarValidator, IMapper mapper)
+        public UserService(AppDbContext appDbContext, IFileProvider fileStorage, IValidator<UserUpdateAvatarDTO> avatarValidator,  IMapper mapper, IValidator<UserFindDto> userFindValidator)
         {
-            _AppDbContext = appDbContext;
+            _appDbContext = appDbContext;
             _fileStorage = fileStorage;
             _avatarValidator = avatarValidator;
             _mapper = mapper;
+            _userFindValidator = userFindValidator;
         }
 
         public async Task<CommonUserDataDTO?> GetByIdAsync(UserFindDto dto, CancellationToken cancellationToken)
         {
-            await _avatarValidator.ValidateAsync(dto);
-            var user = await _AppDbContext.Users
+            await _userFindValidator.ValidateAsync(dto);
+            var user = await _appDbContext.Users
                 .Where(u => u.Id == dto.UserId)
                 .FirstOrDefaultAsync(cancellationToken);
             return _mapper.Map<CommonUserDataDTO>(user);
@@ -43,7 +45,7 @@ namespace Comment.Infrastructure.Services.User
                 return null;
             }
 
-            var userDto = await _AppDbContext.Users.Where(u => u.Id == userId)
+            var userDto = await _appDbContext.Users.Where(u => u.Id == userId)
                 .Select(u => new CommonUserDataDTO
                 {
                     UserName = u.UserName,
@@ -66,16 +68,16 @@ namespace Comment.Infrastructure.Services.User
             if (userId == null || !Guid.TryParse(userId, out Guid userGuid))
                 return new BadRequestObjectResult("Invalid user ID.");
 
-            var user = await _AppDbContext.Users.FindAsync(userGuid, cancellationToken);
+            var user = await _appDbContext.Users.FindAsync(userGuid, cancellationToken);
             if (user == null)
                 return new NotFoundObjectResult("User not found.");
             if (user.Id != userGuid)
                 return new BadRequestObjectResult("Invalid user ID.");
 
-            user.AvatarUrl = GetAvatarUrlById(dto.AvatarId);
+            //user.AvatarUrl = GetAvatarUrlById(dto.AvatarId);
 
-            _AppDbContext.Users.Update(user);
-            await _AppDbContext.SaveChangesAsync(cancellationToken);
+            _appDbContext.Users.Update(user);
+            await _appDbContext.SaveChangesAsync(cancellationToken);
             return new OkObjectResult(user);
         }
     }
