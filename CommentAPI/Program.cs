@@ -1,6 +1,4 @@
 using Comment.Core.Data;
-using Comment.Core.Interfaces;
-using Comment.Infrastructure.Maps;
 using CommentAPI.Extencions.LoadModules;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,6 +14,8 @@ builder.Services.AddRouting(options =>
     options.LowercaseQueryStrings = true;
     options.AppendTrailingSlash = true;
 });
+builder.Services.AddPortConfiguration(builder.WebHost);
+
 builder.Services.AddResponseCompression(options =>
 {
     options.EnableForHttps = true;
@@ -24,9 +24,9 @@ builder.Services.AddResponseCompression(options =>
 
 builder.Services.AddControllers();
 
-builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(UserMapProfile), typeof(ThreadsMapProfile), typeof(CommentMapProfile)));
-
+builder.Services.AddAutoMapperModule();
 builder.Services.AddDipedencyInjections();
+
 
 var jwtOptions = new JwtOptions(builder.Configuration);
 builder.Services.AddJwtAuthentication(jwtOptions);
@@ -38,10 +38,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll",
         builder =>
-            builder.WithOrigins("https://localhost:24815", "http://localhost:24815")
-                   .AllowAnyMethod()
-                   .AllowAnyHeader()
-                   .AllowCredentials()
+            builder.WithOrigins("https://localhost:54366", "http://localhost:5173")
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials()
     )
 );
 builder.Services.AddLogging(builder =>
@@ -50,7 +50,7 @@ builder.Services.AddLogging(builder =>
 );
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c => c.EnableAnnotations());
 
 var app = builder.Build();
 

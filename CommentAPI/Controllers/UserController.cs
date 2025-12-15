@@ -2,6 +2,7 @@ using Comment.Infrastructure.Services.User;
 using Comment.Infrastructure.Services.User.DTOs.Request;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace CommentAPI.Controllers
 {
@@ -12,16 +13,12 @@ namespace CommentAPI.Controllers
     {
         private readonly IUserService _userService = userService;
 
-        [HttpGet]
+        [HttpGet("{id}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetById([FromQuery] Guid id, CancellationToken cancellationToken)
+        [SwaggerOperation(Summary = "Get user profile by id", Description = "Get user profile by id")]
+        public async Task<IActionResult> GetById([FromRoute] Guid? id, CancellationToken cancellationToken)
         {
-            var dto = new UserFindDto(id);
-            var user = await _userService.GetByIdAsync(dto, cancellationToken);
-            if (user == null)
-                return NotFound();
-
-            return Ok(user);
+            return await _userService.GetByIdAsync(id, HttpContext, cancellationToken);
         }
 
         [HttpPut("avatar")]

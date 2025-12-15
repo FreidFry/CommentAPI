@@ -5,7 +5,7 @@ namespace Comment.Core.Persistence
     public class CommentModel
     {
 
-        public Guid Id { get; private set; }
+        public Guid Id { get; } = Guid.NewGuid();
         public string Content { get; private set; }
         public DateTime CreatedAt { get; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; private set; }

@@ -5,9 +5,8 @@ using Comment.Infrastructure.Services.Auth.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
-using System.Security.Claims;
+using static Comment.Infrastructure.Extensions.ClaimsExtensions;
 using static System.Net.WebRequestMethods;
 
 namespace Comment.Infrastructure.Services.Auth
@@ -46,16 +45,14 @@ namespace Comment.Infrastructure.Services.Auth
             return new OkResult();
         }
 
-        public async Task<IActionResult> Login(UserLoginDto UserDto, HttpContext httpContext, CancellationToken cancellationToken)
-        {
+        public async Task<IActionResult> LoginAsync(UserLoginDto UserDto, HttpContext httpContext, CancellationToken cancellationToken)
+            {
             var user = await _appDbContext.Users
                 .FirstOrDefaultAsync(u => u.Email == UserDto.Email, cancellationToken);
 
             if (user == null) return new NotFoundObjectResult("User not found");
             if (!_passwordHasher.VerifyPassword(UserDto.Password, user.HashPassword))
-            {
                 return new UnauthorizedResult();
-            }
 
             SetJwtCookie(httpContext, user);
 
@@ -70,11 +67,18 @@ namespace Comment.Infrastructure.Services.Auth
             httpContext.Response.Cookies.Delete("jwt");
         }
 
-        public string Init(ClaimsPrincipal user)
+        public async Task<IActionResult> Init(HttpContext httpContext)
         {
-#pragma warning disable CS8603 // Possible null reference return.
-            return user.FindFirst("uid")?.Value;
-#pragma warning restore CS8603 // Possible null reference return.
+            var id = GetCallerId(httpContext);
+            var userName = GetCallerUserName(httpContext);
+            var roles = GetCallerRoles(httpContext);
+
+            AppendCookie(httpContext, "id", id.ToString() ?? string.Empty);
+            AppendCookie(httpContext, "userName", userName?.ToString() ?? string.Empty);
+            AppendCookie(httpContext, "roles", string.Join(",", roles) ?? string.Empty);
+            
+
+            return new OkResult();
         }
 
         void SetJwtCookie(HttpContext http, UserModel user)
@@ -82,10 +86,10 @@ namespace Comment.Infrastructure.Services.Auth
             var token = _jwtProvider.GenerateToken(user);
             var expiration = DateTimeOffset.UtcNow.AddDays(_envOptions.ExpiresDays);
 
-            AppendCookie(http, "jwt", token, expiration);
+            AppendSecureCookie(http, "jwt", token, expiration);
         }
 
-        void AppendCookie(HttpContext http, string id, string value, DateTimeOffset? expiration)
+        void AppendSecureCookie(HttpContext http, string id, string value, DateTimeOffset? expiration)
         {
             http.Response.Cookies.Append(id, value, new CookieOptions
             {
@@ -94,6 +98,14 @@ namespace Comment.Infrastructure.Services.Auth
                 SameSite = SameSiteMode.None,
                 Path = "/",
                 Expires = expiration
+            });
+        }
+        void AppendCookie(HttpContext http, string id, string value)
+        {
+            http.Response.Cookies.Append(id, value, new CookieOptions
+            {
+                SameSite = SameSiteMode.None,
+                Path = "/"
             });
         }
     }

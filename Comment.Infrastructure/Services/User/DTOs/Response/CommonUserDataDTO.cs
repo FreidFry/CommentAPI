@@ -1,4 +1,6 @@
-﻿namespace Comment.Infrastructure.Services.User.DTOs.Response
+﻿using Comment.Infrastructure.Services.Thread.DTOs.Response;
+
+namespace Comment.Infrastructure.Services.User.DTOs.Response
 {
     public class CommonUserDataDTO
     {
@@ -7,6 +9,7 @@
         public DateTime CreatedAt { get; set; }
         public string HomePage { get; set; }
         public DateTime? LastActive { get; set; }
+        public List<ThreadResponseDTO> Threads { get; set; } = [];
 
-    }
+}
 }

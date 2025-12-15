@@ -1,5 +1,4 @@
-﻿using Comment.Core.Data;
-using Comment.Core.Interfaces;
+﻿using Comment.Core.Interfaces;
 using Comment.Core.Persistence;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -19,7 +18,7 @@ namespace Comment.Infrastructure.Services
 
         public string GenerateToken(UserModel user)
         {
-            Claim[] claims = [new("uid", user.Id.ToString())];
+            Claim[] claims = [new(ClaimTypes.NameIdentifier, user.Id.ToString()), new (ClaimTypes.Name, user.UserName), new(ClaimTypes.Role, string.Join(",",user.Roles))];
 
             var singningKey = new SigningCredentials(
                 new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SecretKey)),

@@ -50,10 +50,8 @@ namespace CommentAPI.Extencions.LoadModules
             services.AddScoped<IValidator<ThreadCreateDTO>, ThreadCreateValidator>();
             services.AddScoped<IValidator<ThreadUpdateDTO>, ThreadUpdateValidator>();
             services.AddScoped<IValidator<ThreadFindDTO>, ThreadFindValidator>();
-            services.AddScoped<IValidator<ThreadsThreeDTO>, ThreadsThreeValidator>();
             services.AddScoped<IValidator<UserCreateDTO>, UserCreateValidator>();
             services.AddScoped<IValidator<UserUpdateAvatarDTO>, UserUpdateAvatarValidator>();
-            services.AddScoped<IValidator<UserFindDto>, UserFindValidator>();
         }
     }
 }

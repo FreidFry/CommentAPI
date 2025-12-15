@@ -7,7 +7,8 @@ using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
+using static Comment.Infrastructure.Extensions.CommentExtensions;
+using static Comment.Infrastructure.Extensions.ClaimsExtensions;
 
 namespace Comment.Infrastructure.Services.Comment
 {
@@ -39,12 +40,12 @@ namespace Comment.Infrastructure.Services.Comment
                 .AnyAsync(t => t.Id == dto.ThreadId && !t.IsDeleted, cancellationToken);
 
             if (!threadExists)
-                return new NotFoundObjectResult("Thread not found");
+                return new NotFoundResult();
 
             var query = _appDbContext.Comments
                 .Where(c => c.ThreadId == dto.ThreadId && !c.IsDeleted)
                 .Include(c => c.User)
-                .OrderBy(c => c.CreatedAt);
+                .OrderByDescending(c => c.CreatedAt);
 
             if (dto.After.HasValue)
                 query = (IOrderedQueryable<CommentModel>)query.Where(c => c.CreatedAt > dto.After);
@@ -67,8 +68,9 @@ namespace Comment.Infrastructure.Services.Comment
 
             var commentTree = BuildCommentTree(comments);
             DateTime? nextCursor = comments.LastOrDefault()?.CreatedAt;
+            bool HasMore = await query.Skip(dto.Limit).AnyAsync(cancellationToken);
 
-            return new OkObjectResult(new { items = commentTree, nextCursor });
+            return new OkObjectResult(new { items = commentTree, nextCursor, HasMore });
         }
 
         public async Task<IActionResult> GetByIdAsync(CommentFindDTO dto, CancellationToken cancellationToken)
@@ -106,11 +108,11 @@ namespace Comment.Infrastructure.Services.Comment
             if (!validationResult.IsValid)
                 return new BadRequestObjectResult(validationResult.Errors);
 
-            var userIdClaim = httpContext.User.FindFirst("uid");
-            if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out Guid userId))
+            var callerId = GetCallerId(httpContext);
+            if (callerId == null)
                 return new UnauthorizedResult();
 
-            var user = await _appDbContext.Users.FindAsync(new object[] { userId }, cancellationToken);
+            var user = await _appDbContext.Users.FindAsync(new object[] { callerId }, cancellationToken);
             if (user == null || user.IsDeleted || user.IsBanned)
                 return new NotFoundObjectResult("User not found or banned");
 
@@ -136,28 +138,7 @@ namespace Comment.Infrastructure.Services.Comment
             await _appDbContext.Comments.AddAsync(comment, cancellationToken);
             await _appDbContext.SaveChangesAsync(cancellationToken);
 
-            var commentDto = await _appDbContext.Comments
-                .Where(c => c.Id == comment.Id)
-                .Include(c => c.User)
-                .Select(c => new CommentResponseDTO
-                {
-                    Id = c.Id,
-                    Content = c.Content,
-                    CreatedAt = c.CreatedAt,
-                    UpdatedAt = c.UpdatedAt,
-                    ThreadId = c.ThreadId,
-                    ParentCommentId = c.ParentCommentId,
-                    UserId = c.UserId,
-                    UserName = c.User.UserName,
-                    AvatarTumbnailUrl = c.User.AvatarTumbnailUrl
-                })
-                .FirstOrDefaultAsync(cancellationToken);
-
-            return new CreatedAtActionResult(
-                nameof(GetByIdAsync),
-                "Comment",
-                new { id = comment.Id },
-                commentDto);
+            return new OkResult();
         }
 
         public async Task<IActionResult> UpdateAsync(CommentUpdateDTO dto, HttpContext httpContext, CancellationToken cancellationToken)
@@ -227,39 +208,6 @@ namespace Comment.Infrastructure.Services.Comment
             await _appDbContext.SaveChangesAsync(cancellationToken);
 
             return new NoContentResult();
-        }
-
-        private List<CommentTreeDTO> BuildCommentTree(List<CommentResponseDTO> comments)
-        {
-            var commentDict = comments.ToDictionary(c => c.Id, c => new CommentTreeDTO
-            {
-                Id = c.Id,
-                Content = c.Content,
-                CreatedAt = c.CreatedAt,
-                UpdatedAt = c.UpdatedAt,
-                ThreadId = c.ThreadId,
-                ParentCommentId = c.ParentCommentId,
-                UserId = c.UserId,
-                UserName = c.UserName,
-                AvatarTumbnailUrl = c.AvatarTumbnailUrl,
-                Replies = new List<CommentTreeDTO>()
-            });
-
-            var rootComments = new List<CommentTreeDTO>();
-
-            foreach (var comment in commentDict.Values)
-            {
-                if (comment.ParentCommentId.HasValue && commentDict.ContainsKey(comment.ParentCommentId.Value))
-                {
-                    commentDict[comment.ParentCommentId.Value].Replies.Add(comment);
-                }
-                else
-                {
-                    rootComments.Add(comment);
-                }
-            }
-
-            return rootComments;
         }
     }
 }

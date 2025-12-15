@@ -1,3 +1,5 @@
+using Comment.Infrastructure.Services.Comment.DTOs.Response;
+
 namespace Comment.Infrastructure.Services.Thread.DTOs.Response
 {
     public class ThreadResponseDTO
@@ -10,6 +12,7 @@ namespace Comment.Infrastructure.Services.Thread.DTOs.Response
         public DateTime CreatedAt { get; set; }
         public DateTime? LastUpdatedAt { get; set; }
         public int CommentCount { get; set; }
+        public List<CommentResponseDTO> Comments { get; set; }
     }
 }
 

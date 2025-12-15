@@ -7,7 +7,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
+using static Comment.Infrastructure.Extensions.ClaimsExtensions;
 
 namespace Comment.Infrastructure.Services.User
 {
@@ -16,36 +16,39 @@ namespace Comment.Infrastructure.Services.User
         private readonly AppDbContext _appDbContext;
         private readonly IFileProvider _fileStorage;
         private readonly IValidator<UserUpdateAvatarDTO> _avatarValidator;
-        private readonly IValidator<UserFindDto> _userFindValidator;
         private readonly IMapper _mapper;
 
-        public UserService(AppDbContext appDbContext, IFileProvider fileStorage, IValidator<UserUpdateAvatarDTO> avatarValidator,  IMapper mapper, IValidator<UserFindDto> userFindValidator)
+        public UserService(AppDbContext appDbContext, IFileProvider fileStorage, IValidator<UserUpdateAvatarDTO> avatarValidator, IMapper mapper)
         {
             _appDbContext = appDbContext;
             _fileStorage = fileStorage;
             _avatarValidator = avatarValidator;
             _mapper = mapper;
-            _userFindValidator = userFindValidator;
         }
 
-        public async Task<CommonUserDataDTO?> GetByIdAsync(UserFindDto dto, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetByIdAsync(Guid? UserId, HttpContext httpContext, CancellationToken cancellationToken)
         {
-            await _userFindValidator.ValidateAsync(dto);
-            var user = await _appDbContext.Users
-                .Where(u => u.Id == dto.UserId)
-                .FirstOrDefaultAsync(cancellationToken);
-            return _mapper.Map<CommonUserDataDTO>(user);
+            var callerId = GetCallerId(httpContext);
+            if (callerId == null && UserId == null)
+                return new BadRequestResult();
+
+            var isOwner = UserId == callerId;
+
+            var userQuery = _appDbContext.Users
+                .Where(u => u.Id == UserId)
+                .AsQueryable();
+
+            if (isOwner) userQuery = userQuery.Include(u => u.Threads.OrderByDescending(t => t.CreatedAt));
+            else userQuery = userQuery.Include(u => u.Threads.Where(t => !t.IsDeleted && !t.IsBanned).OrderByDescending(t => t.CreatedAt));
+
+            var user = await userQuery.Select(u => _mapper.Map<CommonUserDataDTO>(u)).FirstOrDefaultAsync(cancellationToken);
+            return new OkObjectResult(user);
         }
 
-        public async Task<CommonUserDataDTO?> GetCurrentAsync(HttpContext httpContext, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetCurrentAsync(HttpContext httpContext, CancellationToken cancellationToken)
         {
-            var userIdClaim = httpContext.User.FindFirst("uid");
-            if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out Guid userId))
-            {
-                return null;
-            }
-
-            var userDto = await _appDbContext.Users.Where(u => u.Id == userId)
+            var callerId = GetCallerId(httpContext);
+            var userDto = await _appDbContext.Users.Where(u => u.Id == callerId)
                 .Select(u => new CommonUserDataDTO
                 {
                     UserName = u.UserName,
@@ -55,7 +58,7 @@ namespace Comment.Infrastructure.Services.User
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 
-            return userDto;
+            return new OkObjectResult(userDto);
         }
 
         public async Task<IActionResult> UpdateProfileAvatarAsync(UserUpdateAvatarDTO dto, HttpContext httpContext, CancellationToken cancellationToken)
@@ -64,14 +67,14 @@ namespace Comment.Infrastructure.Services.User
             if (!validationResult.IsValid)
                 return new BadRequestObjectResult(validationResult.Errors);
 
-            var userId = httpContext.User.FindFirst("uid")?.Value;
-            if (userId == null || !Guid.TryParse(userId, out Guid userGuid))
+            var callerId = GetCallerId(httpContext);
+            if (callerId == null)
                 return new BadRequestObjectResult("Invalid user ID.");
 
-            var user = await _appDbContext.Users.FindAsync(userGuid, cancellationToken);
+            var user = await _appDbContext.Users.FindAsync(callerId, cancellationToken);
             if (user == null)
                 return new NotFoundObjectResult("User not found.");
-            if (user.Id != userGuid)
+            if (user.Id != callerId)
                 return new BadRequestObjectResult("Invalid user ID.");
 
             //user.AvatarUrl = GetAvatarUrlById(dto.AvatarId);
