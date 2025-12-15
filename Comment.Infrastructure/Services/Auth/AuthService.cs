@@ -5,9 +5,7 @@ using Comment.Infrastructure.Services.Auth.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json.Linq;
 using static Comment.Infrastructure.Extensions.ClaimsExtensions;
-using static System.Net.WebRequestMethods;
 
 namespace Comment.Infrastructure.Services.Auth
 {
