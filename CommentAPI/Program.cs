@@ -7,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 builder.Services.Configure<ApiOptions>(builder.Configuration);
 builder.Services.Configure<JwtOptions>(builder.Configuration);
+builder.Services.Configure<KestrelConfig>(builder.Configuration);
 
 builder.Services.AddRouting(options =>
 {
@@ -14,7 +15,7 @@ builder.Services.AddRouting(options =>
     options.LowercaseQueryStrings = true;
     options.AppendTrailingSlash = true;
 });
-builder.Services.AddPortConfiguration(builder.WebHost);
+builder.Services.AddPortConfiguration(builder.WebHost, new KestrelConfig(builder.Configuration));
 
 builder.Services.AddResponseCompression(options =>
 {
