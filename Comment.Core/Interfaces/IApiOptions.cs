@@ -3,6 +3,10 @@
     public interface IApiOptions
     {
         string DbConnection { get; }
-        string S2Connection { get; }
+        string AccessKeyId { get; }
+        string SecretAccessKey { get; }
+        string ServiceUrl { get; }
+        string BucketName { get; }
+        string StorageUrl { get; }
     }
 }

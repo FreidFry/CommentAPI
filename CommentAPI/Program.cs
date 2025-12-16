@@ -29,7 +29,7 @@ builder.Services.AddDipedencyInjections();
 
 
 var jwtOptions = new JwtOptions(builder.Configuration);
-builder.Services.AddJwtAuthentication(jwtOptions);
+    builder.Services.AddJwtAuthentication(jwtOptions);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));

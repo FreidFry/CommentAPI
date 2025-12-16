@@ -12,3 +12,8 @@ services:
       ISSUER: "BACK"
       AUDIENCE: "FRONT"
       EXPIRES_DAYS: "3"
+      S3_AccessKeyId: "fb4df5a9cc79a5c664eb261ee16c128a"
+      S3_SecretAccessKey: "c593ec4c8a0b76c1657094344984cd20108fd95a5e0143762787daacea8b900d"
+      S3_StorageUrl: "https://8f1273b48b733e0b0620f5d87371b917.r2.cloudflarestorage.com/images"
+      S3_ServiceUrl: "https://8f1273b48b733e0b0620f5d87371b917.r2.dev"
+      S3_BucketName: "images"

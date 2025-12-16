@@ -12,10 +12,13 @@ namespace Comment.Core.Persistence.Configuration
             builder.Property(t => t.Title).IsRequired();
             builder.Property(t => t.Context).IsRequired();
             builder.Property(t => t.CreatedAt).IsRequired();
-            builder.Property(t => t.LastUpdatedAt).IsRequired(false);
             builder.HasOne(t => t.OwnerUser)
                    .WithMany(u => u.Threads)
                    .HasForeignKey(t => t.OwnerId);
+
+            builder.HasMany(t => t.Comments)
+                   .WithOne(c => c.Thread)
+                   .HasForeignKey(c => c.ThreadId);
         }
 
     }

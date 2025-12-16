@@ -362,3 +362,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /Comment.Core/Migrations
+/FRONTEND_API_DOCUMENTATION.md
+/NET_Entity_framework_SPA_приложение_Комментарии_19_50_14.pdf

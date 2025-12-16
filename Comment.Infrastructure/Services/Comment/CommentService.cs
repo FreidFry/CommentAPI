@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using static Comment.Infrastructure.Extensions.CommentExtensions;
 using static Comment.Infrastructure.Extensions.ClaimsExtensions;
+using Comment.Core.Interfaces;
 
 namespace Comment.Infrastructure.Services.Comment
 {
@@ -19,19 +20,22 @@ namespace Comment.Infrastructure.Services.Comment
         private readonly IValidator<CommentCreateDTO> _createValidator;
         private readonly IValidator<CommentUpdateDTO> _updateValidator;
         private readonly IValidator<CommentFindDTO> _findValidator;
+        private readonly IImageTransform _imageTransform;
 
         public CommentService(
             AppDbContext appDbContext,
             IMapper mapper,
             IValidator<CommentCreateDTO> createValidator,
             IValidator<CommentUpdateDTO> updateValidator,
-            IValidator<CommentFindDTO> findValidator)
+            IValidator<CommentFindDTO> findValidator,
+            IImageTransform imageTransform)
         {
             _appDbContext = appDbContext;
             _mapper = mapper;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
             _findValidator = findValidator;
+            _imageTransform = imageTransform;
         }
 
         public async Task<IActionResult> GetByThreadAsync(CommentsByThreadDTO dto, CancellationToken cancellationToken)
@@ -52,6 +56,7 @@ namespace Comment.Infrastructure.Services.Comment
 
             var comments = await query
                 .Take(dto.Limit)
+                .Include(c => c.User)
                 .Select(c => new CommentResponseDTO
                 {
                     Id = c.Id,
@@ -62,15 +67,17 @@ namespace Comment.Infrastructure.Services.Comment
                     ParentCommentId = c.ParentCommentId,
                     UserId = c.UserId,
                     UserName = c.User.UserName,
-                    AvatarTumbnailUrl = c.User.AvatarTumbnailUrl
+                    AvatarTumbnailUrl = c.User.AvatarTumbnailUrl,
+                    imageTumbnailUrl = c.ImageTumbnailUrl,
+                    imageUrl = c.ImageUrl
                 })
                 .ToListAsync(cancellationToken);
 
-            var commentTree = BuildCommentTree(comments);
+            //var commentTree = BuildCommentTree(comments);
             DateTime? nextCursor = comments.LastOrDefault()?.CreatedAt;
             bool HasMore = await query.Skip(dto.Limit).AnyAsync(cancellationToken);
 
-            return new OkObjectResult(new { items = commentTree, nextCursor, HasMore });
+            return new OkObjectResult(new { items = comments, nextCursor, HasMore });
         }
 
         public async Task<IActionResult> GetByIdAsync(CommentFindDTO dto, CancellationToken cancellationToken)
@@ -102,7 +109,7 @@ namespace Comment.Infrastructure.Services.Comment
             return new OkObjectResult(comment);
         }
 
-        public async Task<IActionResult> CreateAsync(CommentCreateDTO dto, HttpContext httpContext, CancellationToken cancellationToken)
+        public async Task<IActionResult> CreateAsync([FromForm]CommentCreateDTO dto, HttpContext httpContext, CancellationToken cancellationToken)
         {
             var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
@@ -121,7 +128,7 @@ namespace Comment.Infrastructure.Services.Comment
 
             if (thread == null)
                 return new NotFoundObjectResult("Thread not found");
-
+            var comment = new CommentModel(dto.Content,user, thread);
             if (dto.ParentCommentId.HasValue)
             {
                 var parentComment = await _appDbContext.Comments
@@ -131,9 +138,15 @@ namespace Comment.Infrastructure.Services.Comment
 
                 if (parentComment == null)
                     return new BadRequestObjectResult("Parent comment not found or belongs to different thread");
+
+                comment.AddParent(parentComment);
+            }
+            if (dto.FormFile != null)
+            {
+                var (imageUrl, imageTumbnailUrl) = await _imageTransform.ProcessAndUploadImageAsync(dto.FormFile, cancellationToken);
+                comment.SetImageUrls(imageUrl, imageTumbnailUrl);
             }
 
-            var comment = new CommentModel(dto.Content, dto.ThreadId, user, dto.ParentCommentId);
 
             await _appDbContext.Comments.AddAsync(comment, cancellationToken);
             await _appDbContext.SaveChangesAsync(cancellationToken);

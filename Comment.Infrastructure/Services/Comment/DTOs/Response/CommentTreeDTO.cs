@@ -1,8 +1,8 @@
 namespace Comment.Infrastructure.Services.Comment.DTOs.Response
 {
-    public class CommentTreeDTO : CommentResponseDTO
+    public class CommentTreeDTO
     {
-        public List<CommentTreeDTO> Replies { get; set; } = new();
+        public ICollection<CommentResponseDTO> Comments { get; set; } = [];
     }
 }
 

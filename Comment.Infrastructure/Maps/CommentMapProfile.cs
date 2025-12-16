@@ -17,7 +17,10 @@ namespace Comment.Infrastructure.Maps
                 .ForMember(dest => dest.ParentCommentId, opt => opt.MapFrom(src => src.ParentCommentId))
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.UserName))
-                .ForMember(dest => dest.AvatarTumbnailUrl, opt => opt.MapFrom(src => src.User.AvatarTumbnailUrl));
+                .ForMember(dest => dest.AvatarTumbnailUrl, opt => opt.MapFrom(src => src.User.AvatarTumbnailUrl))
+                .ForMember(dest => dest.imageTumbnailUrl, opt => opt.MapFrom(src => src.ImageTumbnailUrl))
+                .ForMember(dest => dest.imageUrl, opt => opt.MapFrom(src => src.ImageUrl));
+
         }
     }
 }

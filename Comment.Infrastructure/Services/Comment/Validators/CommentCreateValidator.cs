@@ -16,6 +16,10 @@ namespace Comment.Infrastructure.Services.Comment.Validators
             RuleFor(x => x.ThreadId)
                 .NotEmpty()
                 .WithMessage("ThreadId is required.");
+
+            RuleFor(x => x.FormFile)
+                .Must(file => file == null || file.Length <= 2 * 1024 * 1024) // 2 MB limit
+                .WithMessage("FormFile size must not exceed 2 MB.");
         }
     }
 }

@@ -29,7 +29,7 @@ namespace CommentAPI.Controllers
         [HttpPost]
         [Authorize]
         [SwaggerOperation(Summary = "Create a new comment", Description = "Creates a new comment with the provided details.")]
-        public async Task<IActionResult> Create([FromBody] CommentCreateDTO dto, CancellationToken cancellationToken)
+        public async Task<IActionResult> Create([FromForm] CommentCreateDTO dto, CancellationToken cancellationToken)
         {
             return await _commentService.CreateAsync(dto, HttpContext, cancellationToken);
         }

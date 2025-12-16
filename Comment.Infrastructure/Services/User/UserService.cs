@@ -41,7 +41,8 @@ namespace Comment.Infrastructure.Services.User
             if (isOwner) userQuery = userQuery.Include(u => u.Threads.OrderByDescending(t => t.CreatedAt));
             else userQuery = userQuery.Include(u => u.Threads.Where(t => !t.IsDeleted && !t.IsBanned).OrderByDescending(t => t.CreatedAt));
 
-            var user = await userQuery.Select(u => _mapper.Map<CommonUserDataDTO>(u)).FirstOrDefaultAsync(cancellationToken);
+            var user = await _mapper.ProjectTo<CommonUserDataDTO>(userQuery)
+                .FirstOrDefaultAsync(cancellationToken);
             return new OkObjectResult(user);
         }
 

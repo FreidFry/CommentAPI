@@ -32,7 +32,7 @@ namespace Comment.Core.Persistence
             HashPassword = hashPassword;
         }
 
-        public UserModel()
+        private UserModel()
         {
             
         }

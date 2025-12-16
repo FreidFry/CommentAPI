@@ -12,7 +12,6 @@ namespace Comment.Core.Persistence.Configuration
             builder.HasKey(c => c.Id);
             builder.Property(c => c.Content).IsRequired();
             builder.Property(c => c.CreatedAt).IsRequired();
-            builder.Property(t => t.UpdatedAt).IsRequired(false);
 
             builder.Property(c => c.IsDeleted).IsRequired();
 
@@ -20,6 +19,10 @@ namespace Comment.Core.Persistence.Configuration
                    .WithMany()
                    .HasForeignKey(c => c.UserId)
                    .IsRequired();
+            builder.HasMany(c => c.Replyes)
+                   .WithOne(c => c.ParentComment)
+                   .HasForeignKey(c => c.ParentCommentId)
+                   .IsRequired(false);
 
             builder.HasIndex(c => c.ThreadId);
             builder.HasIndex(c => c.ParentCommentId);

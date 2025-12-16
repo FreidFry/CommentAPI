@@ -4,10 +4,9 @@ namespace Comment.Core.Interfaces
 {
     public interface IFileProvider
     {
-        Task DeleteFileAsync(string filePath);
-        bool FileExists(string filePath);
-        string GetFilePath(string directory, Guid userId);
-        string GetFileUrl(string directory, string filePath, Guid userId);
-        Task<string> SaveFileAsync(IFormFile file, string directory, string fileName);
+        Task DeleteFileAsync(string url, CancellationToken cancellationToken);
+        Task<bool> FileExists(string url);
+        Task<string> GetFileUrlAsync(string url, CancellationToken cancellationToken);
+        Task<string> SaveFileAsync(string path, CancellationToken cancellationToken);
     }
 }

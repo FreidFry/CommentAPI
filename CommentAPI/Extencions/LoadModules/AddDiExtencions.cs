@@ -42,6 +42,7 @@ namespace CommentAPI.Extencions.LoadModules
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ICommentService, CommentService>();
             services.AddScoped<IThreadService, ThreadService>();
+            services.AddScoped<IImageTransform, ImageTransform>();
 
             // Validators
             services.AddScoped<IValidator<CommentCreateDTO>, CommentCreateValidator>();

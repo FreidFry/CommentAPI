@@ -24,7 +24,7 @@ namespace Comment.Core.Persistence
             OwnerUser = user;
         }
 
-        public ThreadModel()
+        private ThreadModel()
         {
             
         }

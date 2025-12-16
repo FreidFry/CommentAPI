@@ -1,33 +1,180 @@
-﻿using Comment.Core.Interfaces;
-using Microsoft.AspNetCore.Http;
+﻿using Amazon.S3;
+using Amazon.S3.Model;
+using Amazon.S3.Transfer;
+using Comment.Core.Interfaces;
 
 namespace Comment.Infrastructure.Storages
 {
     public class FileProvider : IFileProvider
     {
-        public Task DeleteFileAsync(string filePath)
+        private readonly IAmazonS3 _s3Client;
+        private readonly IApiOptions _apiOptions;
+
+        public FileProvider(IApiOptions apiOptions)
         {
-            throw new NotImplementedException();
+            _apiOptions = apiOptions;
+
+            var endpointUrl = apiOptions.StorageUrl;
+
+            var config = new AmazonS3Config
+            {
+                ServiceURL = endpointUrl,
+                ForcePathStyle = true
+            };
+
+            var credentials = new Amazon.Runtime.BasicAWSCredentials(apiOptions.AccessKeyId, apiOptions.SecretAccessKey);
+            _s3Client = new AmazonS3Client(credentials, config);
         }
 
-        public bool FileExists(string filePath)
+        /// <summary>
+        /// Stores a file from a local path in Cloudflare R2 (S3)
+        /// </summary>
+        /// <param name="path">Local path to the file</param>
+        /// <param name="cancellationToken">Сancellation Token</param>
+        /// <returns>Public URL of the uploaded file</returns>
+        public async Task<string> SaveFileAsync(string path, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException($"File not found: {path}");
+            }
+
+            try
+            {
+                var fileName = Path.GetFileName(path);
+                var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+                var guid = Guid.NewGuid().ToString("N")[..8];
+                var key = $"uploads/{timestamp}_{guid}_{fileName}";
+
+                var s = new TransferUtility(_s3Client);
+                var uploadRequest = new TransferUtilityUploadRequest
+                {
+                    BucketName = _apiOptions.BucketName,
+                    Key = key,
+                    FilePath = path,
+                    ContentType = GetContentType(fileName),
+                    DisablePayloadSigning = true
+                };
+                await s.UploadAsync(uploadRequest, cancellationToken);
+
+                var fileUrl = $"{_apiOptions.ServiceUrl.TrimEnd('/')}/{key}";
+                
+                try
+                {
+                    File.Delete(path);
+                }
+                catch (Exception ex)
+                {
+                }
+
+                return fileUrl;
+            }
+            catch (AmazonS3Exception s3Ex)
+            {
+                throw new Exception($"Failed to upload file to S3: {s3Ex.Message}", s3Ex);
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
-        public string GetFileUrl(string directory, string filePath, Guid userId)
+        /// <summary>
+        /// Gets the public URL of a file from S3
+        /// </summary>
+        /// <param name="url">URL or file key in S3</param>
+        /// <param name="cancellationToken">Сancellation Token</param>
+        /// <returns>Публичный URL файла</returns>
+        public async Task<string> GetFileUrlAsync(string url, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            if (Uri.TryCreate(url, UriKind.Absolute, out _))
+            {
+                return url;
+            }
+
+            var key = url.TrimStart('/');
+            return await Task.FromResult($"{_apiOptions.ServiceUrl.TrimEnd('/')}/{key}");
         }
 
-        public string GetFilePath(string directory, Guid userId)
+        /// <summary>
+        /// Checks for the existence of a file in S3
+        /// </summary>
+        /// <param name="url">URL or file key in S3</param>
+        /// <returns>True if the file exists, otherwise False</returns>
+        public async Task<bool> FileExists(string url)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var key = ExtractKeyFromUrl(url);
+
+                var request = new GetObjectMetadataRequest
+                {
+                    BucketName = _apiOptions.BucketName,
+                    Key = key
+                };
+
+                await _s3Client.GetObjectMetadataAsync(request);
+                return true;
+            }
+            catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return false;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
         }
 
-        public Task<string> SaveFileAsync(IFormFile file, string directory, string fileName)
+        /// <summary>
+        /// Deletes a file from S3
+        /// </summary>
+        /// <param name="url">URL or file key in S3</param>
+        /// <param name="cancellationToken">Сancellation Token</param>
+        public async Task DeleteFileAsync(string url, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var key = ExtractKeyFromUrl(url);
+
+                var request = new DeleteObjectRequest
+                {
+                    BucketName = _apiOptions.BucketName,
+                    Key = key
+                };
+
+                await _s3Client.DeleteObjectAsync(request, cancellationToken);
+                
+            }
+            catch (AmazonS3Exception s3Ex)
+            {
+                throw new Exception($"Failed to delete file from S3: {s3Ex.Message}", s3Ex);
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        private static string ExtractKeyFromUrl(string url)
+        {
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            {
+                return uri.AbsolutePath.TrimStart('/');
+            }
+            return url.TrimStart('/');
+        }
+
+        private static string GetContentType(string fileName)
+        {
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+            return extension switch
+            {
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                _ => "text/plain"
+
+            };
         }
     }
 }

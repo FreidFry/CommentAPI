@@ -57,6 +57,7 @@ namespace Comment.Infrastructure.Services.Thread
             var ThreadsThree = await query
                 .Take(dto.Limit)
                 .Include(t => t.Comments)
+                .OrderByDescending(t => t.CreatedAt)
                 .Select(t => new ThreadsThreeDTOResponce(
                     t.Id,
                     t.Title,
@@ -84,6 +85,7 @@ namespace Comment.Infrastructure.Services.Thread
                 .Where(t => t.Id == dto.ThreadId && (t.OwnerId == callerId || !t.IsDeleted))
                 .Include(t => t.Comments)
                 .Include(t => t.OwnerUser)
+                .OrderByDescending(t => t.CreatedAt)
                 .Select(t => new ThreadResponseDTO
                 {
                     Id = t.Id,
@@ -94,7 +96,7 @@ namespace Comment.Infrastructure.Services.Thread
                     CreatedAt = t.CreatedAt,
                     LastUpdatedAt = t.LastUpdatedAt,
                     CommentCount = t.Comments.Count(c => !c.IsDeleted),
-                    Comments = _mapper.Map<CommentResponseDTO>(t.Comments).
+                    Comments = _mapper.Map<ICollection<CommentResponseDTO>>(t.Comments)
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 
