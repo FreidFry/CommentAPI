@@ -5,5 +5,5 @@ services:
       context: .
       dockerfile: CommentAPI/Dockerfile
     ports:
-      - "7806:8080" # HTTP
-      - "7807:8081" # HTTPS
+      - "8080:8080" # HTTP
+      - "8081:8081" # HTTPS
