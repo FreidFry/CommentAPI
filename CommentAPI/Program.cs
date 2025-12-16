@@ -15,7 +15,8 @@ builder.Services.AddRouting(options =>
     options.LowercaseQueryStrings = true;
     options.AppendTrailingSlash = true;
 });
-builder.Services.AddPortConfiguration(builder.WebHost, new KestrelConfig(builder.Configuration));
+var kestrelConfig = new KestrelConfig(builder.Configuration);
+builder.Services.AddPortConfiguration(builder.WebHost, kestrelConfig);
 
 builder.Services.AddResponseCompression(options =>
 {
@@ -39,7 +40,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll",
         builder =>
-            builder.WithOrigins("https://localhost:54366", "http://localhost:5173")
+            builder.WithOrigins(kestrelConfig.httpDomen, kestrelConfig.httpDomenSecure)
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials()
