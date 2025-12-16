@@ -13,7 +13,7 @@ namespace CommentAPI.Extencions.LoadModules
 
             hostBuilder.ConfigureKestrel(options =>
             {
-                options.ListenAnyIP(8080);
+                options.ListenAnyIP(kestrel.port);
                 options.ListenAnyIP(8081, listenOptions =>
                 {
                     listenOptions.UseHttps(cert);
