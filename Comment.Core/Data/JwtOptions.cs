@@ -13,10 +13,10 @@ namespace Comment.Core.Data
 
         public JwtOptions(IConfiguration config)
         {
-            SecretKey = config["SECRET_KEY"] ?? throw new ArgumentNullException("SecretKey");
-            Issuer = config["ISSUER"] ?? throw new ArgumentNullException("Issuer");
-            Audience = config["AUDIENCE"] ?? throw new ArgumentNullException("Audience");
-            ExpiresDays = double.Parse(config["EXPIRES_DAYS"] ?? throw new ArgumentNullException("ExpiresDays"));
+            SecretKey = config["JWT:SECRET_KEY"] ?? throw new ArgumentNullException("SecretKey");
+            Issuer = config["JWT:ISSUER"] ?? throw new ArgumentNullException("Issuer");
+            Audience = config["JWT:AUDIENCE"] ?? throw new ArgumentNullException("Audience");
+            ExpiresDays = double.Parse(config["JWT:EXPIRES_DAYS"] ?? throw new ArgumentNullException("ExpiresDays"));
 
             if (SecretKey.Length < 32)
                 throw new ArgumentException("SecretKey must be at least 32 characters long");
