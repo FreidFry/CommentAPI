@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Newtonsoft.Json.Linq;
+using System.Net.Http;
 using static Comment.Infrastructure.Extensions.ClaimsExtensions;
 
 namespace Comment.Infrastructure.Services.Auth
@@ -89,28 +90,13 @@ namespace Comment.Infrastructure.Services.Auth
             AppendSecureCookie(http, "jwt", token, expiration);
         }
 
-        void AppendSecureCookie(HttpContext http, string id, string value, DateTimeOffset? expiration)
+        void AppendSecureCookie(HttpContext http, string key, string value, DateTimeOffset? expiration)
         {
-            http.Response.Cookies.Append(id, value, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
-                Path = "/",
-                Expires = expiration,
-            });
-        }
-        void AppendCookie(HttpContext http, string id, string value)
-        {
-            http.Response.Cookies.Append(id, value, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
-                Path = "/"
-            });
-        }
+            if (string.IsNullOrEmpty(value)) return;
 
+            var cookieHeader = $"{key}={value}; Secure; HttpOnly; SameSite=None; Partitioned; Path=/;";
+            http.Response.Headers.Append("Set-Cookie", cookieHeader);
+        }
         private void AppendCookies(HttpContext httpContext, string key, string value)
         {
             if (string.IsNullOrEmpty(value)) return;
