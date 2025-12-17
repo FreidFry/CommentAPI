@@ -85,7 +85,7 @@ namespace Comment.Infrastructure.Services.Thread
                 .Where(t => t.Id == dto.ThreadId && (t.OwnerId == callerId || !t.IsDeleted))
                 .Include(t => t.Comments)
                 .Include(t => t.OwnerUser)
-                .OrderByDescending(t => t.CreatedAt)
+                .OrderBy(t => t.CreatedAt)
                 .Select(t => new ThreadResponseDTO
                 {
                     Id = t.Id,
@@ -95,8 +95,8 @@ namespace Comment.Infrastructure.Services.Thread
                     OwnerUserName = t.OwnerUser.UserName,
                     CreatedAt = t.CreatedAt,
                     LastUpdatedAt = t.LastUpdatedAt,
-                    CommentCount = t.Comments.Count(c => !c.IsDeleted),
-                    Comments = _mapper.Map<ICollection<CommentResponseDTO>>(t.Comments)
+                    CommentCount = t.Comments.Count(c => !c.IsDeleted && !c.IsBaned),
+                    Comments = _mapper.Map<ICollection<CommentResponseDTO>>(t.Comments.Where(c => !c.IsBaned && !c.IsDeleted && !c.User.IsDeleted && !c.User.IsBanned))
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -141,7 +141,7 @@ namespace Comment.Infrastructure.Services.Thread
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 
-            return new OkResult();
+            return new RedirectResult($"/threads/{thread.Id}");
         }
 
         public async Task<IActionResult> UpdateAsync(ThreadUpdateDTO dto, HttpContext httpContext, CancellationToken cancellationToken)

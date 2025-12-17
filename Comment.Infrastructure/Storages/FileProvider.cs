@@ -1,4 +1,5 @@
-﻿using Amazon.S3;
+﻿using Amazon.Runtime;
+using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using Comment.Core.Interfaces;
@@ -22,7 +23,7 @@ namespace Comment.Infrastructure.Storages
                 ForcePathStyle = true
             };
 
-            var credentials = new Amazon.Runtime.BasicAWSCredentials(apiOptions.AccessKeyId, apiOptions.SecretAccessKey);
+            var credentials = new BasicAWSCredentials(apiOptions.AccessKeyId, apiOptions.SecretAccessKey);
             _s3Client = new AmazonS3Client(credentials, config);
         }
 
