@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Newtonsoft.Json.Linq;
-using System.Net.Http;
 using static Comment.Infrastructure.Extensions.ClaimsExtensions;
 
 namespace Comment.Infrastructure.Services.Auth
@@ -74,9 +73,9 @@ namespace Comment.Infrastructure.Services.Auth
             var userName = GetCallerUserName(httpContext);
             var roles = GetCallerRoles(httpContext);
 
-            AppendCookies(httpContext, "id", id.ToString() ?? string.Empty);
-            AppendCookies(httpContext, "userName", userName?.ToString() ?? string.Empty);
-            AppendCookies(httpContext, "roles", string.Join(",", roles) ?? string.Empty);
+            AppendCookie(httpContext, "id", id.ToString() ?? string.Empty);
+            AppendCookie(httpContext, "userName", userName?.ToString() ?? string.Empty);
+            AppendCookie(httpContext, "roles", string.Join(",", roles) ?? string.Empty);
 
 
             return new OkResult();
@@ -90,19 +89,39 @@ namespace Comment.Infrastructure.Services.Auth
             AppendSecureCookie(http, "jwt", token, expiration);
         }
 
-        void AppendSecureCookie(HttpContext http, string key, string value, DateTimeOffset? expiration)
+        void AppendSecureCookie(HttpContext http, string id, string value, DateTimeOffset? expiration)
         {
-            if (string.IsNullOrEmpty(value)) return;
-
-            var cookieHeader = $"{key}={value}; Secure; HttpOnly; SameSite=None; Partitioned; Path=/;";
-            http.Response.Headers.Append("Set-Cookie", cookieHeader);
+            http.Response.Cookies.Append(id, value, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Path = "/",
+                Expires = expiration,
+                IsEssential = true
+            });
+            SetPartitionedCookie(http, id);
         }
-        private void AppendCookies(HttpContext httpContext, string key, string value)
+        private void AppendCookie(HttpContext http, string key, string? value)
         {
-            if (string.IsNullOrEmpty(value)) return;
+            if (string.IsNullOrWhiteSpace(value)) return;
 
-            var cookieHeader = $"{key}={value}; Secure; HttpOnly; SameSite=None; Partitioned; Path=/;";
-            httpContext.Response.Headers.Append("Set-Cookie", cookieHeader);
+            http.Response.Cookies.Append(key, value);
+
+            SetPartitionedCookie(http, key);
+        }
+
+        private void SetPartitionedCookie(HttpContext http, string key)
+        {
+            var setCookieHeader = http.Response.Headers["Set-Cookie"];
+            if (!string.IsNullOrEmpty(setCookieHeader))
+            {
+                var lastCookie = setCookieHeader.LastOrDefault();
+                if (lastCookie != null && lastCookie.Contains(key) && !lastCookie.Contains("Partitioned"))
+                {
+                    http.Response.Headers["Set-Cookie"] = setCookieHeader.ToString().Replace(lastCookie, lastCookie + "; Partitioned");
+                }
+            }
         }
     }
 }
