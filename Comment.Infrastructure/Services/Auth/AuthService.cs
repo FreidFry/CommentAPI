@@ -5,6 +5,8 @@ using Comment.Infrastructure.Services.Auth.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Newtonsoft.Json.Linq;
 using static Comment.Infrastructure.Extensions.ClaimsExtensions;
 
 namespace Comment.Infrastructure.Services.Auth
@@ -44,7 +46,7 @@ namespace Comment.Infrastructure.Services.Auth
         }
 
         public async Task<IActionResult> LoginAsync(UserLoginDto UserDto, HttpContext httpContext, CancellationToken cancellationToken)
-            {
+        {
             var user = await _appDbContext.Users
                 .FirstOrDefaultAsync(u => u.Email == UserDto.Email, cancellationToken);
 
@@ -71,10 +73,10 @@ namespace Comment.Infrastructure.Services.Auth
             var userName = GetCallerUserName(httpContext);
             var roles = GetCallerRoles(httpContext);
 
-            AppendCookie(httpContext, "id", id.ToString() ?? string.Empty);
-            AppendCookie(httpContext, "userName", userName?.ToString() ?? string.Empty);
-            AppendCookie(httpContext, "roles", string.Join(",", roles) ?? string.Empty);
-            
+            AppendCookies(httpContext, "id", id.ToString() ?? string.Empty);
+            AppendCookies(httpContext, "userName", userName?.ToString() ?? string.Empty);
+            AppendCookies(httpContext, "roles", string.Join(",", roles) ?? string.Empty);
+
 
             return new OkResult();
         }
@@ -95,7 +97,7 @@ namespace Comment.Infrastructure.Services.Auth
                 Secure = true,
                 SameSite = SameSiteMode.None,
                 Path = "/",
-                Expires = expiration
+                Expires = expiration,
             });
         }
         void AppendCookie(HttpContext http, string id, string value)
@@ -107,6 +109,14 @@ namespace Comment.Infrastructure.Services.Auth
                 SameSite = SameSiteMode.None,
                 Path = "/"
             });
+        }
+
+        private void AppendCookies(HttpContext httpContext, string key, string value)
+        {
+            if (string.IsNullOrEmpty(value)) return;
+
+            var cookieHeader = $"{key}={value}; Secure; HttpOnly; SameSite=None; Partitioned; Path=/;";
+            httpContext.Response.Headers.Append("Set-Cookie", cookieHeader);
         }
     }
 }
