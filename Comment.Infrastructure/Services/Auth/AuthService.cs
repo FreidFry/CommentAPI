@@ -78,11 +78,7 @@ namespace Comment.Infrastructure.Services.Auth
                 $"{userName}|{userName?.ToString() ?? string.Empty}",
                 $"{roles}|{string.Join(",", roles) ?? string.Empty}"
             };
-
-            AppendCookie(httpContext, "id", id.ToString() ?? string.Empty);
-            AppendCookie(httpContext, "userName", userName?.ToString() ?? string.Empty);
-            AppendCookie(httpContext, "roles", string.Join(",", roles) ?? string.Empty);
-
+            AppendCookie(httpContext, cookies);
             SetPartitionedCookie(httpContext);
             return new OkResult();
         }
