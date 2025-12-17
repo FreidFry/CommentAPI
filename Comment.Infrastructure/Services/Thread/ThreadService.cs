@@ -4,7 +4,6 @@ using Comment.Core.Persistence;
 using Comment.Infrastructure.Services.Comment.DTOs.Response;
 using Comment.Infrastructure.Services.Thread.DTOs.Request;
 using Comment.Infrastructure.Services.Thread.DTOs.Response;
-using Comment.Infrastructure.Services.Utils;
 using Comment.Infrastructure.Utils;
 using FluentValidation;
 using Microsoft.AspNetCore.Http;
