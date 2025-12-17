@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Newtonsoft.Json.Linq;
 using static Comment.Infrastructure.Extensions.ClaimsExtensions;
+using static System.Net.WebRequestMethods;
 
 namespace Comment.Infrastructure.Services.Auth
 {
@@ -77,7 +78,7 @@ namespace Comment.Infrastructure.Services.Auth
             AppendCookie(httpContext, "userName", userName?.ToString() ?? string.Empty);
             AppendCookie(httpContext, "roles", string.Join(",", roles) ?? string.Empty);
 
-
+            SetPartitionedCookie(httpContext);
             return new OkResult();
         }
 
@@ -87,6 +88,8 @@ namespace Comment.Infrastructure.Services.Auth
             var expiration = DateTimeOffset.UtcNow.AddDays(_envOptions.ExpiresDays);
 
             AppendSecureCookie(http, "jwt", token, expiration);
+            SetPartitionedCookie(http);
+
         }
 
         void AppendSecureCookie(HttpContext http, string id, string value, DateTimeOffset? expiration)
@@ -99,7 +102,6 @@ namespace Comment.Infrastructure.Services.Auth
                 Path = "/",
                 Expires = expiration
             });
-            SetPartitionedCookie(http, id);
         }
         private void AppendCookie(HttpContext http, string key, string? value)
         {
@@ -112,17 +114,15 @@ namespace Comment.Infrastructure.Services.Auth
                 SameSite = SameSiteMode.None,
                 Path = "/"
             });
-
-            SetPartitionedCookie(http, key);
         }
 
-        private void SetPartitionedCookie(HttpContext http, string key)
+        private void SetPartitionedCookie(HttpContext http)
         {
             var setCookieHeader = http.Response.Headers["Set-Cookie"];
             if (!string.IsNullOrEmpty(setCookieHeader))
             {
                 var lastCookie = setCookieHeader.LastOrDefault();
-                if (lastCookie != null && lastCookie.Contains(key) && !lastCookie.Contains("Partitioned"))
+                if (lastCookie != null && !lastCookie.Contains("Partitioned"))
                 {
                     http.Response.Headers["Set-Cookie"] = setCookieHeader.ToString().Replace(lastCookie, lastCookie + "; Partitioned");
                 }
