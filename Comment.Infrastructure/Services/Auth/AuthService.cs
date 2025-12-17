@@ -97,8 +97,7 @@ namespace Comment.Infrastructure.Services.Auth
                 Secure = true,
                 SameSite = SameSiteMode.None,
                 Path = "/",
-                Expires = expiration,
-                IsEssential = true
+                Expires = expiration
             });
             SetPartitionedCookie(http, id);
         }
@@ -106,7 +105,13 @@ namespace Comment.Infrastructure.Services.Auth
         {
             if (string.IsNullOrWhiteSpace(value)) return;
 
-            http.Response.Cookies.Append(key, value);
+            http.Response.Cookies.Append(key, value, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Path = "/"
+            });
 
             SetPartitionedCookie(http, key);
         }
@@ -119,7 +124,7 @@ namespace Comment.Infrastructure.Services.Auth
                 var lastCookie = setCookieHeader.LastOrDefault();
                 if (lastCookie != null && lastCookie.Contains(key) && !lastCookie.Contains("Partitioned"))
                 {
-                    http.Response.Headers["Set-Cookie"] = setCookieHeader.ToString().Replace(lastCookie, lastCookie + "; secure; Partitioned");
+                    http.Response.Headers["Set-Cookie"] = setCookieHeader.ToString().Replace(lastCookie, lastCookie + "; Partitioned");
                 }
             }
         }
