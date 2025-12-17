@@ -70,6 +70,9 @@ namespace Comment.Infrastructure.Services.Auth
 
         public async Task<IActionResult> Init(HttpContext httpContext)
         {
+            try
+            {
+
             var id = GetCallerId(httpContext);
             var userName = GetCallerUserName(httpContext);
             var roles = GetCallerRoles(httpContext);
@@ -81,6 +84,13 @@ namespace Comment.Infrastructure.Services.Auth
             AppendCookie(httpContext, cookies);
             SetPartitionedCookie(httpContext);
             return new OkResult();
+            }
+            catch (Exception ex)
+            {
+                // Это лог в консоль Railway
+                Console.WriteLine($"FATAL ERROR in Init: {ex.Message} \n {ex.StackTrace}");
+                return new StatusCodeResult(500);
+            }
         }
 
         void SetJwtCookie(HttpContext http, UserModel user)
