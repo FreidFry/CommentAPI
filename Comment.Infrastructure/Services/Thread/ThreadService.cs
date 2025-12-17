@@ -38,7 +38,7 @@ namespace Comment.Infrastructure.Services.Thread
         {
 
             var query = _appDbContext.Threads
-                .Where(t => !t.IsDeleted && !t.IsBanned)
+                .Where(t => !t.IsDeleted && !t.IsBanned && !t.OwnerUser.IsDeleted && !t.OwnerUser.IsBanned)
                 .OrderByDescending(t => t.CreatedAt);
 
             if (dto.After.HasValue)
