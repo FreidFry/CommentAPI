@@ -76,11 +76,11 @@ namespace Comment.Infrastructure.Services.Auth
             var id = GetCallerId(httpContext);
             var userName = GetCallerUserName(httpContext);
             var roles = GetCallerRoles(httpContext);
-            string[] cookies = {
+                string[] cookies = [
                 $"{id}|{id.ToString() ?? string.Empty}",
-                $"{userName}|{userName?.ToString() ?? string.Empty}",
+                $"{userName}|{userName ?? string.Empty}",
                 $"{roles}|{string.Join(",", roles) ?? string.Empty}"
-            };
+            ];
             AppendCookie(httpContext, cookies);
             SetPartitionedCookie(httpContext);
             return new OkResult();
