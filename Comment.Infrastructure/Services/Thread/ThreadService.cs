@@ -4,6 +4,8 @@ using Comment.Core.Persistence;
 using Comment.Infrastructure.Services.Comment.DTOs.Response;
 using Comment.Infrastructure.Services.Thread.DTOs.Request;
 using Comment.Infrastructure.Services.Thread.DTOs.Response;
+using Comment.Infrastructure.Services.Utils;
+using Comment.Infrastructure.Utils;
 using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,19 +21,22 @@ namespace Comment.Infrastructure.Services.Thread
         private readonly IValidator<ThreadCreateDTO> _createValidator;
         private readonly IValidator<ThreadUpdateDTO> _updateValidator;
         private readonly IValidator<ThreadFindDTO> _findValidator;
+        private readonly IHtmlSanitize _htmlSanitizer;
 
         public ThreadService(
             AppDbContext context,
             IMapper mapper,
             IValidator<ThreadCreateDTO> createValidator,
             IValidator<ThreadUpdateDTO> updateValidator,
-            IValidator<ThreadFindDTO> findValidator)
+            IValidator<ThreadFindDTO> findValidator,
+            IHtmlSanitize htmlSanitizer)
         {
             _appDbContext = context;
             _mapper = mapper;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
             _findValidator = findValidator;
+            _htmlSanitizer = htmlSanitizer;
         }
 
         public async Task<IActionResult> GetThreadsThreeAsync(ThreadsThreeDTO dto, CancellationToken cancellationToken)
@@ -120,7 +125,7 @@ namespace Comment.Infrastructure.Services.Thread
             if (user == null || user.IsDeleted || user.IsBanned)
                 return new NotFoundObjectResult("User not found or banned");
 
-            var thread = new ThreadModel(dto.Title, dto.Context, user);
+            var thread = new ThreadModel(_htmlSanitizer.Sanitize(dto.Title), _htmlSanitizer.Sanitize(dto.Context), user);
 
             await _appDbContext.Threads.AddAsync(thread, cancellationToken);
             await _appDbContext.SaveChangesAsync(cancellationToken);
@@ -164,8 +169,8 @@ namespace Comment.Infrastructure.Services.Thread
                 return new ForbidResult();
 
             // Update thread properties using EF Core's property access for private setters
-            _appDbContext.Entry(thread).Property("Title").CurrentValue = dto.Title;
-            _appDbContext.Entry(thread).Property("Context").CurrentValue = dto.Context;
+            _appDbContext.Entry(thread).Property("Title").CurrentValue = _htmlSanitizer.Sanitize(dto.Title);
+            _appDbContext.Entry(thread).Property("Context").CurrentValue = _htmlSanitizer.Sanitize(dto.Context);
             thread.LastUpdatedAt = DateTime.UtcNow;
 
             _appDbContext.Threads.Update(thread);

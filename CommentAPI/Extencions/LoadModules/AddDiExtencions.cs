@@ -12,6 +12,7 @@ using Comment.Infrastructure.Services.User;
 using Comment.Infrastructure.Services.User.DTOs.Request;
 using Comment.Infrastructure.Services.User.Validators;
 using Comment.Infrastructure.Storages;
+using Comment.Infrastructure.Utils;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 
@@ -21,11 +22,7 @@ namespace CommentAPI.Extencions.LoadModules
     {
         public static void AddDipedencyInjections(this IServiceCollection services)
         {
-            services.AddScoped<IPasswordHasher, PassworHasher>();
-            services.AddScoped<IJwtProvider, JwtProvider>();
             services.AddSingleton<ITokenStorage, TokenStorage>();
-            services.AddSingleton<IFileProvider, FileProvider>();
-
             services.AddSingleton<IJwtOptions>(sp =>
             {
                 var jwtOptions = sp.GetRequiredService<IConfiguration>();
@@ -37,14 +34,19 @@ namespace CommentAPI.Extencions.LoadModules
                 return new ApiOptions(apiOptions);
             });
 
-            // Services
+            #region Services
+
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ICommentService, CommentService>();
             services.AddScoped<IThreadService, ThreadService>();
             services.AddScoped<IImageTransform, ImageTransform>();
+            services.AddScoped<IJwtProvider, JwtProvider>();
 
-            // Validators
+            #endregion
+
+            #region Validators
+
             services.AddScoped<IValidator<CommentCreateDTO>, CommentCreateValidator>();
             services.AddScoped<IValidator<CommentUpdateDTO>, CommentUpdateValidator>();
             services.AddScoped<IValidator<CommentFindDTO>, CommentFindValidator>();
@@ -53,6 +55,15 @@ namespace CommentAPI.Extencions.LoadModules
             services.AddScoped<IValidator<ThreadFindDTO>, ThreadFindValidator>();
             services.AddScoped<IValidator<UserCreateDTO>, UserCreateValidator>();
             services.AddScoped<IValidator<UserUpdateAvatarDTO>, UserUpdateAvatarValidator>();
+
+            #endregion
+
+            #region Utils
+
+            services.AddScoped<IPasswordHasher, PassworHasher>();
+            services.AddSingleton<IFileProvider, FileProvider>();
+            services.AddSingleton<IHtmlSanitize, HtmlSanitize>();
+            #endregion
         }
     }
 }

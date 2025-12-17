@@ -1,6 +1,6 @@
 ﻿using Comment.Core.Interfaces;
 
-namespace Comment.Infrastructure.Services
+namespace Comment.Infrastructure.Utils
 {
     public class PassworHasher : IPasswordHasher
     {

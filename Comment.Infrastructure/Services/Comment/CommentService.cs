@@ -1,15 +1,15 @@
 using AutoMapper;
 using Comment.Core.Data;
+using Comment.Core.Interfaces;
 using Comment.Core.Persistence;
 using Comment.Infrastructure.Services.Comment.DTOs.Request;
 using Comment.Infrastructure.Services.Comment.DTOs.Response;
+using Comment.Infrastructure.Utils;
 using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using static Comment.Infrastructure.Extensions.CommentExtensions;
 using static Comment.Infrastructure.Extensions.ClaimsExtensions;
-using Comment.Core.Interfaces;
 
 namespace Comment.Infrastructure.Services.Comment
 {
@@ -21,6 +21,7 @@ namespace Comment.Infrastructure.Services.Comment
         private readonly IValidator<CommentUpdateDTO> _updateValidator;
         private readonly IValidator<CommentFindDTO> _findValidator;
         private readonly IImageTransform _imageTransform;
+        private readonly IHtmlSanitize _htmlSanitizer;
 
         public CommentService(
             AppDbContext appDbContext,
@@ -28,7 +29,9 @@ namespace Comment.Infrastructure.Services.Comment
             IValidator<CommentCreateDTO> createValidator,
             IValidator<CommentUpdateDTO> updateValidator,
             IValidator<CommentFindDTO> findValidator,
-            IImageTransform imageTransform)
+            IImageTransform imageTransform,
+            IHtmlSanitize htmlSanitizer)
+
         {
             _appDbContext = appDbContext;
             _mapper = mapper;
@@ -36,6 +39,7 @@ namespace Comment.Infrastructure.Services.Comment
             _updateValidator = updateValidator;
             _findValidator = findValidator;
             _imageTransform = imageTransform;
+            _htmlSanitizer = htmlSanitizer;
         }
 
         public async Task<IActionResult> GetByThreadAsync(CommentsByThreadDTO dto, CancellationToken cancellationToken)
@@ -109,7 +113,7 @@ namespace Comment.Infrastructure.Services.Comment
             return new OkObjectResult(comment);
         }
 
-        public async Task<IActionResult> CreateAsync([FromForm]CommentCreateDTO dto, HttpContext httpContext, CancellationToken cancellationToken)
+        public async Task<IActionResult> CreateAsync([FromForm] CommentCreateDTO dto, HttpContext httpContext, CancellationToken cancellationToken)
         {
             var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
@@ -128,12 +132,12 @@ namespace Comment.Infrastructure.Services.Comment
 
             if (thread == null)
                 return new NotFoundObjectResult("Thread not found");
-            var comment = new CommentModel(dto.Content,user, thread);
+            var comment = new CommentModel(_htmlSanitizer.Sanitize(dto.Content), user, thread);
             if (dto.ParentCommentId.HasValue)
             {
                 var parentComment = await _appDbContext.Comments
-                    .FirstOrDefaultAsync(c => c.Id == dto.ParentCommentId.Value && 
-                                             c.ThreadId == dto.ThreadId && 
+                    .FirstOrDefaultAsync(c => c.Id == dto.ParentCommentId.Value &&
+                                             c.ThreadId == dto.ThreadId &&
                                              !c.IsDeleted, cancellationToken);
 
                 if (parentComment == null)
@@ -173,7 +177,7 @@ namespace Comment.Infrastructure.Services.Comment
             if (comment.UserId != userId)
                 return new ForbidResult();
 
-            comment.UpdateContent(dto.Content);
+            comment.UpdateContent(_htmlSanitizer.Sanitize(dto.Content));
             _appDbContext.Comments.Update(comment);
             await _appDbContext.SaveChangesAsync(cancellationToken);
 
