@@ -102,8 +102,7 @@ namespace Comment.Infrastructure.Services.Auth
         {
             http.Response.Cookies.Append(id, value, new CookieOptions
             {
-                SameSite = SameSiteMode.None,
-                Path = "/"
+                Path = "/",
             });
         }
     }
