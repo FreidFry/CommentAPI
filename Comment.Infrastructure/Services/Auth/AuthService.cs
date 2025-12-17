@@ -119,7 +119,7 @@ namespace Comment.Infrastructure.Services.Auth
                 var lastCookie = setCookieHeader.LastOrDefault();
                 if (lastCookie != null && lastCookie.Contains(key) && !lastCookie.Contains("Partitioned"))
                 {
-                    http.Response.Headers["Set-Cookie"] = setCookieHeader.ToString().Replace(lastCookie, lastCookie + "; Partitioned");
+                    http.Response.Headers["Set-Cookie"] = setCookieHeader.ToString().Replace(lastCookie, lastCookie + "; secure; Partitioned");
                 }
             }
         }
