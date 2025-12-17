@@ -73,6 +73,11 @@ namespace Comment.Infrastructure.Services.Auth
             var id = GetCallerId(httpContext);
             var userName = GetCallerUserName(httpContext);
             var roles = GetCallerRoles(httpContext);
+            string[] cookies = {
+                $"{id}|{id.ToString() ?? string.Empty}",
+                $"{userName}|{userName?.ToString() ?? string.Empty}",
+                $"{roles}|{string.Join(",", roles) ?? string.Empty}"
+            };
 
             AppendCookie(httpContext, "id", id.ToString() ?? string.Empty);
             AppendCookie(httpContext, "userName", userName?.ToString() ?? string.Empty);
@@ -103,17 +108,28 @@ namespace Comment.Infrastructure.Services.Auth
                 Expires = expiration
             });
         }
-        private void AppendCookie(HttpContext http, string key, string? value)
+        private void AppendCookie(HttpContext http, string[] cookieArray)
         {
-            if (string.IsNullOrWhiteSpace(value)) return;
+            if (cookieArray.Length == 0) return;
 
-            http.Response.Cookies.Append(key, value, new CookieOptions
+            for (int i = 0; i < cookieArray.Length; i++)
             {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
-                Path = "/"
-            });
+                var parts = cookieArray[i].Split('|');
+                if (parts.Length != 2) continue;
+                var key = parts[0];
+                var value = parts[1];
+                if (i == cookieArray.Length - 1)
+                    http.Response.Cookies.Append(key, value, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.None,
+                        Path = "/"
+                    });
+                else
+                    http.Response.Cookies.Append(key, value);
+            }
+
         }
 
         private void SetPartitionedCookie(HttpContext http)
