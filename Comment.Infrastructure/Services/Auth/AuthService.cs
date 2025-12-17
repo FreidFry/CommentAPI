@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Newtonsoft.Json.Linq;
+using System.Data;
 using static Comment.Infrastructure.Extensions.ClaimsExtensions;
 using static System.Net.WebRequestMethods;
 
@@ -60,7 +61,7 @@ namespace Comment.Infrastructure.Services.Auth
             _appDbContext.Users.Update(user);
             await _appDbContext.SaveChangesAsync(cancellationToken);
 
-            return new OkObjectResult(new { Message = "Login successful" });
+            return new OkObjectResult(new AuthInitDTO(user.Id, user.UserName, user.Roles.ToList()));
         }
 
         public void Logout(HttpContext httpContext)
@@ -70,6 +71,7 @@ namespace Comment.Infrastructure.Services.Auth
 
         public async Task<IActionResult> Init(HttpContext httpContext)
         {
+            return new EmptyResult();
             var id = GetCallerId(httpContext);
             var userName = GetCallerUserName(httpContext);
             var roles = GetCallerRoles(httpContext);
