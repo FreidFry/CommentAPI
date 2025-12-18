@@ -76,11 +76,11 @@ namespace Comment.Infrastructure.Utils
             return outputPath;
         }
 
-        private string GetNewName()
+        private static string GetNewName()
         {
             var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-            var guid = Guid.NewGuid().ToString("N")[..8];
-            return Path.Combine(timestamp, guid);
+            var guid = Guid.NewGuid().ToString("N")[..5];
+            return $"{timestamp}{guid}";
         }
 
         public async Task<(string imageUrl, string imageTumbnailUrl)> ProcessAndUploadImageAsync(IFormFile file, CancellationToken cancellationToken)
