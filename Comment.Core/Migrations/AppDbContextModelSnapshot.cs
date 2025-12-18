@@ -80,6 +80,11 @@ namespace Comment.Core.Migrations
 
                     b.HasIndex("UserModelId");
 
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.HasIndex("ThreadId", "ParentDepth", "CreatedAt")
+                        .HasDatabaseName("IX_Comments_Thread_Depth_Date");
+
                     b.ToTable("Comments", (string)null);
                 });
 

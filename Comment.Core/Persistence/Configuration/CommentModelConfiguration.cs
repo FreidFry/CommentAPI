@@ -28,6 +28,9 @@ namespace Comment.Core.Persistence.Configuration
             builder.HasIndex(c => c.ParentCommentId);
             builder.HasIndex(c => c.UserId);
             builder.HasIndex(c => c.CreatedAt);
+            builder.HasIndex(c => new { c.UserId, c.CreatedAt });
+            builder.HasIndex(c => new { c.ThreadId, c.ParentDepth, c.CreatedAt })
+           .HasDatabaseName("IX_Comments_Thread_Depth_Date");
         }
     }
 }

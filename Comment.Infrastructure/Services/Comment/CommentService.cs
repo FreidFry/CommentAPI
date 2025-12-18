@@ -62,8 +62,8 @@ namespace Comment.Infrastructure.Services.Comment
                 query = (IOrderedQueryable<CommentModel>)query.Where(c => c.CreatedAt > dto.After);
 
             var comments = await query
-                .Take(dto.Limit)
-                .Include(c => c.User)
+                .Where(c => c.ParentDepth == 0)
+                .OrderByDescending(c => c.CreatedAt)
                 .Select(c => new CommentResponseDTO
                 {
                     Id = c.Id,
@@ -78,9 +78,9 @@ namespace Comment.Infrastructure.Services.Comment
                     ImageTumbnailUrl = c.ImageTumbnailUrl,
                     ImageUrl = c.ImageUrl
                 })
+                .Take(dto.Limit)
                 .ToListAsync(cancellationToken);
 
-            //var commentTree = BuildCommentTree(comments);
             DateTime? nextCursor = comments.LastOrDefault()?.CreatedAt;
             bool HasMore = await query.Skip(dto.Limit).AnyAsync(cancellationToken);
 
