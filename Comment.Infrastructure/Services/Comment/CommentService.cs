@@ -148,11 +148,6 @@ namespace Comment.Infrastructure.Services.Comment
 
                 comment.AddParent(parentComment);
             }
-            if (dto.FormFile != null)
-            {
-                var (imageUrl, imageTumbnailUrl) = await _imageTransform.ProcessAndUploadImageAsync(dto.FormFile, cancellationToken);
-                comment.SetImageUrls(imageUrl, imageTumbnailUrl);
-            }
 
             switch (dto.FormFile?.ContentType)
             {
