@@ -148,9 +148,6 @@ namespace Comment.Infrastructure.Services.Comment
 
                 comment.AddParent(parentComment);
             }
-            try
-            {
-
                 switch (dto.FormFile?.ContentType)
                 {
                     case "image/jpeg":
@@ -176,12 +173,6 @@ namespace Comment.Infrastructure.Services.Comment
                 await _appDbContext.SaveChangesAsync(cancellationToken);
 
                 return new OkResult();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return new BadRequestObjectResult("Invalid file upload");
-            }
         }
 
         public async Task<IActionResult> UpdateAsync(CommentUpdateDTO dto, HttpContext httpContext, CancellationToken cancellationToken)

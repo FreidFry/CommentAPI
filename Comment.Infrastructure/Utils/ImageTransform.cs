@@ -16,7 +16,7 @@ namespace Comment.Infrastructure.Utils
         }
         public static async Task<MemoryStream> CreateTumbnailAsync(IFormFile file, CancellationToken cancellationToken)
         {
-            using var outputStream = new MemoryStream();
+            var outputStream = new MemoryStream();
 
             using var stream = file.OpenReadStream();
             using var image = await Image.LoadAsync(stream, cancellationToken);
@@ -38,7 +38,7 @@ namespace Comment.Infrastructure.Utils
 
         private static async Task<MemoryStream> CreateTumbnailGifAsync(IFormFile file, CancellationToken cancellationToken)
         {
-            using var outputStream = new MemoryStream();
+            var outputStream = new MemoryStream();
 
             using var stream = file.OpenReadStream();
             using var image = await Image.LoadAsync(stream, cancellationToken);
@@ -77,7 +77,7 @@ namespace Comment.Infrastructure.Utils
 
         private static async Task<MemoryStream> GetOriginalGifAsync(IFormFile file, CancellationToken cancellationToken)
         {
-            using var outputStream = new MemoryStream();
+            var outputStream = new MemoryStream();
 
             using var stream = file.OpenReadStream();
             using var image = await Image.LoadAsync(stream, cancellationToken);
@@ -93,6 +93,8 @@ namespace Comment.Infrastructure.Utils
 
         private static string GetNewFileName(string name)
         {
+
+
             var newName = Uri.EscapeDataString(name);
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             return $"{timestamp}_{newName}";
@@ -103,11 +105,11 @@ namespace Comment.Infrastructure.Utils
             var newName = GetNewFileName(file.FileName);
             var type = "image/jpeg";
 
-            var tumbnail = await CreateTumbnailAsync(file, cancellationToken);
-            var original = await GetOriginalImageAsync(file, cancellationToken);
+            using var tumbnail = await CreateTumbnailAsync(file, cancellationToken);
+            using var original = await GetOriginalImageAsync(file, cancellationToken);
 
-            var tumbnailUrl = await _fileProvider.SaveImageAsync(tumbnail, newName, type, cancellationToken);
-            var originalUlr = await _fileProvider.SaveImageAsync(original, newName, type, cancellationToken);
+            var tumbnailUrl = await _fileProvider.SaveImageAsync(tumbnail, $"thumb_{newName}.jpg", type, cancellationToken);
+            var originalUlr = await _fileProvider.SaveImageAsync(original, $"{newName}.jpg", type, cancellationToken);
 
             return (originalUlr, tumbnailUrl);
         }
@@ -117,11 +119,11 @@ namespace Comment.Infrastructure.Utils
             var newName = GetNewFileName(file.FileName);
             var type = "image/gif";
 
-            var tumbnail = await CreateTumbnailGifAsync(file, cancellationToken);
-            var originall = await GetOriginalGifAsync(file, cancellationToken);
+            using var tumbnail = await CreateTumbnailGifAsync(file, cancellationToken);
+            using var originall = await GetOriginalGifAsync(file, cancellationToken);
 
-            var tumbnailUrl = await _fileProvider.SaveImageAsync(tumbnail, newName, type, cancellationToken);
-            var originallUrl = await _fileProvider.SaveImageAsync(tumbnail, newName, type, cancellationToken);
+            var tumbnailUrl = await _fileProvider.SaveImageAsync(tumbnail, $"thumb_{newName}.jpg", type, cancellationToken);
+            var originallUrl = await _fileProvider.SaveImageAsync(tumbnail,$"{newName}.jpg", type, cancellationToken);
 
             return (originallUrl, tumbnailUrl);
         }
