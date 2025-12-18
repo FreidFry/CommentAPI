@@ -92,7 +92,7 @@ namespace Comment.Infrastructure.Utils
 
             var tumbnailurl = await _fileProvider.SaveImageAsync(tumbnail, cancellationToken);
             var resizedlurl = await _fileProvider.SaveImageAsync(original, cancellationToken);
-            File.Delete(filename);
+            File.Delete(Path.Combine(dir,filename));
             return (resizedlurl, tumbnailurl);
         }
 
