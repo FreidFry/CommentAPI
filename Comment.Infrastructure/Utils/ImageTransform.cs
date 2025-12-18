@@ -32,6 +32,7 @@ namespace Comment.Infrastructure.Utils
                 Quality = 80
             }, cancellationToken);
 
+            outputStream.Position = 0;
             return outputStream;
         }
 
@@ -55,6 +56,7 @@ namespace Comment.Infrastructure.Utils
                 Quantizer = new SixLabors.ImageSharp.Processing.Processors.Quantization.OctreeQuantizer()
             }, cancellationToken);
 
+            outputStream.Position = 0;
             return outputStream;
         }
 
@@ -68,6 +70,8 @@ namespace Comment.Infrastructure.Utils
             {
                 Quality = 70
             });
+
+            outputStream.Position = 0;
             return outputStream;
         }
 
@@ -83,6 +87,7 @@ namespace Comment.Infrastructure.Utils
                 Quantizer = new SixLabors.ImageSharp.Processing.Processors.Quantization.OctreeQuantizer()
             }, cancellationToken);
 
+            outputStream.Position = 0;
             return outputStream;
         }
 
