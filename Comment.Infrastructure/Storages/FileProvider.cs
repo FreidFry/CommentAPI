@@ -196,7 +196,7 @@ namespace Comment.Infrastructure.Storages
                     BucketName = _apiOptions.txtBucketName,
                     Key = key,
                     DisablePayloadSigning = true,
-                    ContentType = "text/plain"
+                    ContentType = "text/plain; charset=utf-8"
                 };
                 await s.UploadAsync(uploadRequest, cancellationToken);
 
