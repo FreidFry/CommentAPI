@@ -19,6 +19,9 @@ namespace Comment.Core.Persistence.Configuration
             builder.HasMany(t => t.Comments)
                    .WithOne(c => c.Thread)
                    .HasForeignKey(c => c.ThreadId);
+
+            builder.HasIndex(t => t.OwnerId);
+            builder.HasIndex(t => t.CreatedAt);
         }
 
     }

@@ -27,6 +27,7 @@ namespace Comment.Core.Persistence.Configuration
             builder.HasIndex(c => c.ThreadId);
             builder.HasIndex(c => c.ParentCommentId);
             builder.HasIndex(c => c.UserId);
+            builder.HasIndex(c => c.CreatedAt);
         }
     }
 }

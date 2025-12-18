@@ -28,6 +28,9 @@ namespace Comment.Core.Persistence.Configuration
                      .WithOne(t => t.OwnerUser)
                      .HasForeignKey(t => t.OwnerId)
                      .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasIndex(u => u.Email).IsUnique();
+            builder.HasIndex(u => u.UserName).IsUnique();
         }
     }
 }

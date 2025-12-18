@@ -92,10 +92,10 @@ namespace Comment.Infrastructure.Utils
             var tumbnail = await CreateTumbnailAsync(file, dir, newName, cancellationToken);
             var original = await ChangeExtensionAsync(file, dir, newName, cancellationToken);
 
-            var tumbnailurl = await _fileProvider.SaveImageAsync(tumbnail, cancellationToken);
-            var resizedlurl = await _fileProvider.SaveImageAsync(original, cancellationToken);
+            var tumbnailUrl = await _fileProvider.SaveImageAsync(tumbnail, cancellationToken);
+            var originalUlr = await _fileProvider.SaveImageAsync(original, cancellationToken);
             File.Delete(Path.Combine(dir, filename));
-            return (resizedlurl, tumbnailurl);
+            return (originalUlr, tumbnailUrl);
         }
 
         public async Task<string> ProcessAndUploadGifAsync(IFormFile file, CancellationToken cancellationToken)

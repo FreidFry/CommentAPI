@@ -70,6 +70,8 @@ namespace Comment.Core.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedAt");
+
                     b.HasIndex("ParentCommentId");
 
                     b.HasIndex("ThreadId");
@@ -111,6 +113,8 @@ namespace Comment.Core.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
 
                     b.HasIndex("OwnerId");
 
@@ -165,6 +169,12 @@ namespace Comment.Core.Migrations
                         .HasColumnType("character varying(50)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("UserName")
+                        .IsUnique();
 
                     b.ToTable("Users", (string)null);
                 });
