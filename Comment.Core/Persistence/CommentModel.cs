@@ -16,6 +16,7 @@ namespace Comment.Core.Persistence
         public ThreadModel? Thread { get; }
         public string? ImageUrl { get; private set; }
         public string? ImageTumbnailUrl { get; private set; }
+        public string? FileUrl { get; private set; }
 
 
         public Guid? ParentCommentId { get; private set; }
@@ -42,7 +43,7 @@ namespace Comment.Core.Persistence
 
         private CommentModel()
         {
-            
+
         }
 
         public void AddParent(CommentModel parent)
@@ -68,6 +69,11 @@ namespace Comment.Core.Persistence
         {
             ImageUrl = imageUrl;
             ImageTumbnailUrl = imageTumbnailUrl;
+        }
+
+        public void SetFileUrl(string fileUrl)
+        {
+            FileUrl = fileUrl;
         }
     }
 }

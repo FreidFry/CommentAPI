@@ -149,14 +149,17 @@ namespace Comment.Infrastructure.Services.Comment
                 comment.AddParent(parentComment);
             }
 
+            Console.WriteLine(dto.FormFile?.ContentType);
             switch (dto.FormFile?.ContentType)
             {
                 case "image/jpeg":
                 case "image/png":
-                    await _imageTransform.ProcessAndUploadImageAsync(dto.FormFile, cancellationToken);
+                    (string imageUrl, string tumbnailUrl) = await _imageTransform.ProcessAndUploadImageAsync(dto.FormFile, cancellationToken);
+                    comment.SetImageUrls(imageUrl, tumbnailUrl);
                     break;
                 case "plain/text":
-                    await _fileProvider.SaveFileAsync(dto.FormFile, cancellationToken);
+                    var fileUrl = await _fileProvider.SaveFileAsync(dto.FormFile, cancellationToken);
+                    comment.SetFileUrl(fileUrl);
                     break;
                 default:
                     break;
