@@ -75,8 +75,8 @@ namespace Comment.Infrastructure.Services.Comment
                     UserId = c.UserId,
                     UserName = c.User.UserName,
                     AvatarTumbnailUrl = c.User.AvatarTumbnailUrl,
-                    imageTumbnailUrl = c.ImageTumbnailUrl,
-                    imageUrl = c.ImageUrl
+                    ImageTumbnailUrl = c.ImageTumbnailUrl,
+                    ImageUrl = c.ImageUrl
                 })
                 .ToListAsync(cancellationToken);
 
