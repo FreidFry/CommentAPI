@@ -91,18 +91,16 @@ namespace Comment.Infrastructure.Utils
             return outputStream;
         }
 
-        private static string GetNewFileName(string name)
+        private static string GetNewFileName()
         {
-
-
-            var newName = Uri.EscapeDataString(name);
+            var guid = Guid.NewGuid().ToString()[..5];
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            return $"{timestamp}_{newName}";
+            return $"{timestamp}_{guid}";
         }
 
         public async Task<(string imageUrl, string imageTumbnailUrl)> ProcessAndUploadImageAsync(IFormFile file, CancellationToken cancellationToken)
         {
-            var newName = GetNewFileName(file.FileName);
+            var newName = GetNewFileName();
             var type = "image/jpeg";
 
             using var tumbnail = await CreateTumbnailAsync(file, cancellationToken);
@@ -116,16 +114,16 @@ namespace Comment.Infrastructure.Utils
 
         public async Task<(string gifUrl, string gifTumbnailUrl)> ProcessAndUploadGifAsync(IFormFile file, CancellationToken cancellationToken)
         {
-            var newName = GetNewFileName(file.FileName);
+            var newName = GetNewFileName();
             var type = "image/gif";
 
             using var tumbnail = await CreateTumbnailGifAsync(file, cancellationToken);
             using var original = await GetOriginalGifAsync(file, cancellationToken);
 
             var tumbnailUrl = await _fileProvider.SaveImageAsync(tumbnail, $"thumb_{newName}.jpg", type, cancellationToken);
-            var originallUrl = await _fileProvider.SaveImageAsync(original, $"{newName}.jpg", type, cancellationToken);
+            var originalUrl = await _fileProvider.SaveImageAsync(original, $"{newName}.jpg", type, cancellationToken);
 
-            return (originallUrl, tumbnailUrl);
+            return (originalUrl, tumbnailUrl);
         }
     }
 }
