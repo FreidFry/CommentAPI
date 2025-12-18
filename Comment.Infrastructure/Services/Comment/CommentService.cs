@@ -149,7 +149,6 @@ namespace Comment.Infrastructure.Services.Comment
                 comment.AddParent(parentComment);
             }
 
-            Console.WriteLine(dto.FormFile?.ContentType);
             switch (dto.FormFile?.ContentType)
             {
                 case "image/jpeg":

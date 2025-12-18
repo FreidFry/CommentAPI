@@ -109,7 +109,6 @@ namespace Comment.Infrastructure.Utils
             var tumbnailUrl = await _fileProvider.SaveImageAsync(tumbnail, newName, type, cancellationToken);
             var originalUlr = await _fileProvider.SaveImageAsync(original, newName, type, cancellationToken);
 
-            File.Delete(file.FileName);
             return (originalUlr, tumbnailUrl);
         }
 
@@ -124,7 +123,6 @@ namespace Comment.Infrastructure.Utils
             var tumbnailUrl = await _fileProvider.SaveImageAsync(tumbnail, newName, type, cancellationToken);
             var originallUrl = await _fileProvider.SaveImageAsync(tumbnail, newName, type, cancellationToken);
 
-            File.Delete(file.FileName);
             return (originallUrl, tumbnailUrl);
         }
     }
