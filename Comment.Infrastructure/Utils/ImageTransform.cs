@@ -120,10 +120,10 @@ namespace Comment.Infrastructure.Utils
             var type = "image/gif";
 
             using var tumbnail = await CreateTumbnailGifAsync(file, cancellationToken);
-            using var originall = await GetOriginalGifAsync(file, cancellationToken);
+            using var original = await GetOriginalGifAsync(file, cancellationToken);
 
             var tumbnailUrl = await _fileProvider.SaveImageAsync(tumbnail, $"thumb_{newName}.jpg", type, cancellationToken);
-            var originallUrl = await _fileProvider.SaveImageAsync(tumbnail,$"{newName}.jpg", type, cancellationToken);
+            var originallUrl = await _fileProvider.SaveImageAsync(original, $"{newName}.jpg", type, cancellationToken);
 
             return (originallUrl, tumbnailUrl);
         }
