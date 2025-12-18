@@ -181,7 +181,6 @@ namespace Comment.Infrastructure.Storages
 
         public async Task<string> SaveFileAsync(IFormFile file, CancellationToken cancellationToken)
         {
-
             var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
             var guid = Guid.NewGuid().ToString("N")[..8];
             var key = $"uploads/{timestamp}_{guid}.txt";

@@ -14,10 +14,10 @@ namespace Comment.Infrastructure.Utils
         {
             _fileProvider = fileProvider;
         }
-        public async Task<string> CreateTumbnailAsync(IFormFile file, string path, string dir, string name, CancellationToken cancellationToken)
+        public async Task<string> CreateTumbnailAsync(IFormFile file, string dir, string newName, CancellationToken cancellationToken)
         {
             var ext = ".jpg";
-            var outputPath = Path.Combine(dir, $"{name}_tumb{ext}");
+            var outputPath = Path.Combine(dir, $"{newName}_tumb{ext}");
             using var stream = file.OpenReadStream();
             using var image = await Image.LoadAsync(stream, cancellationToken);
 
@@ -28,20 +28,19 @@ namespace Comment.Infrastructure.Utils
                     Mode = ResizeMode.Max,
                     Size = new Size(320, 240)
                 }));
-                image.Save($"{outputPath}", new JpegEncoder
-                {
-                    Quality = 80
-                });
-
-                return outputPath;
             }
-            return path;
+            image.Save($"{outputPath}", new JpegEncoder
+            {
+                Quality = 80
+            });
+
+            return outputPath;
         }
 
-        private async Task<string> ResizeGifAsync(IFormFile file, string path, string dir, string name, CancellationToken cancellationToken)
+        private async Task<string> ResizeGifAsync(IFormFile file, string path, string dir, string newName, CancellationToken cancellationToken)
         {
             var ext = ".gif";
-            var outputPath = Path.Combine(dir, $"{name}_thumb{ext}");
+            var outputPath = Path.Combine(dir, $"{newName}_thumb{ext}");
             using var stream = file.OpenReadStream();
             using var image = await Image.LoadAsync(stream);
 
@@ -63,36 +62,39 @@ namespace Comment.Infrastructure.Utils
             return path;
         }
 
-        private async Task<string> ChangeExtensionAsync(IFormFile file, string path, string dir, string name, CancellationToken cancellationToken)
+        private async Task<string> ChangeExtensionAsync(IFormFile file, string dir, string newName, CancellationToken cancellationToken)
         {
-            if (file.ContentType != "image/jpeg")
-            {
-                var ext = ".jpg";
-                var outputPath = Path.Combine(dir, $"{name}{ext}");
-                using var stream = file.OpenReadStream();
-                using var image = await Image.LoadAsync(stream, cancellationToken);
+            var ext = ".jpg";
+            var outputPath = Path.Combine(dir, $"{newName}{ext}");
+            using var stream = file.OpenReadStream();
+            using var image = await Image.LoadAsync(stream, cancellationToken);
 
-                image.Save($"{outputPath}", new JpegEncoder
-                {
-                    Quality = 70
-                });
-                return outputPath;
-            }
-            return path;
+            image.Save($"{outputPath}", new JpegEncoder
+            {
+                Quality = 70
+            });
+            return outputPath;
+        }
+
+        private string GetNewName()
+        {
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+            var guid = Guid.NewGuid().ToString("N")[..8];
+            return Path.Combine(timestamp, guid);
         }
 
         public async Task<(string imageUrl, string imageTumbnailUrl)> ProcessAndUploadImageAsync(IFormFile file, CancellationToken cancellationToken)
         {
             var filename = file.FileName;
             var dir = Path.GetDirectoryName(filename)!;
-            var name = Path.GetFileNameWithoutExtension(filename);
+            var newName = GetNewName();
 
-            var tumbnail = await CreateTumbnailAsync(file, filename, dir, name, cancellationToken);
-            var original = await ChangeExtensionAsync(file, filename, dir, name, cancellationToken);
+            var tumbnail = await CreateTumbnailAsync(file, dir, newName, cancellationToken);
+            var original = await ChangeExtensionAsync(file, dir, newName, cancellationToken);
 
             var tumbnailurl = await _fileProvider.SaveImageAsync(tumbnail, cancellationToken);
             var resizedlurl = await _fileProvider.SaveImageAsync(original, cancellationToken);
-            File.Delete(Path.Combine(dir,filename));
+            File.Delete(Path.Combine(dir, filename));
             return (resizedlurl, tumbnailurl);
         }
 
