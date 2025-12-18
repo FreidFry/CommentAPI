@@ -158,8 +158,8 @@ namespace Comment.Infrastructure.Services.Comment
                     comment.SetImageUrls(imageUrl, tumbnailUrl);
                     break;
                 case "image/gif":
-                    string gifUrl = await _imageTransform.ProcessAndUploadGifAsync(dto.FormFile, cancellationToken);
-                    comment.SetImageUrls(gifUrl, gifUrl);
+                    (string gifUrl, string tumbnailGif ) = await _imageTransform.ProcessAndUploadGifAsync(dto.FormFile, cancellationToken);
+                    comment.SetImageUrls(gifUrl, tumbnailGif);
                     break;
                 case "text/plain":
                     if (dto.FormFile.Length > 100 * 1024) // 100 KB

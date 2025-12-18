@@ -4,8 +4,6 @@ using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using Comment.Core.Interfaces;
 using Microsoft.AspNetCore.Http;
-using System;
-using System.IO;
 
 namespace Comment.Infrastructure.Storages
 {
@@ -36,38 +34,25 @@ namespace Comment.Infrastructure.Storages
         /// <param name="path">Local path to the file</param>
         /// <param name="cancellationToken">Сancellation Token</param>
         /// <returns>Public URL of the uploaded file</returns>
-        public async Task<string> SaveImageAsync(string path, CancellationToken cancellationToken)
+        public async Task<string> SaveImageAsync(MemoryStream stream, string s3Key, string contentType, CancellationToken cancellationToken)
         {
-            if (!File.Exists(path))
-                throw new FileNotFoundException($"File not found: {path}");
-
             try
             {
-                var fileName = Path.GetFileName(path);
-                var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-                var guid = Guid.NewGuid().ToString("N")[..8];
-                var key = $"uploads/{timestamp}_{guid}_{fileName}";
+                var normalizedS3Key = Uri.EscapeDataString(s3Key);
+                var key = $"uploads/{normalizedS3Key}";
 
                 var s = new TransferUtility(_s3Client);
                 var uploadRequest = new TransferUtilityUploadRequest
                 {
                     BucketName = _apiOptions.ImageBucketName,
                     Key = key,
-                    FilePath = path,
-                    ContentType = GetContentType(fileName),
+                    InputStream = stream,
+                    ContentType = contentType,
                     DisablePayloadSigning = true
                 };
                 await s.UploadAsync(uploadRequest, cancellationToken);
 
                 var fileUrl = $"{_apiOptions.ImagePublicUrl.TrimEnd('/')}/{key}";
-
-                try
-                {
-                    File.Delete(path);
-                }
-                catch (Exception ex)
-                {
-                }
 
                 return fileUrl;
             }
@@ -167,23 +152,13 @@ namespace Comment.Infrastructure.Storages
             return url.TrimStart('/');
         }
 
-        private static string GetContentType(string fileName)
-        {
-            var extension = Path.GetExtension(fileName).ToLowerInvariant();
-            return extension switch
-            {
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".png" => "image/png",
-                _ => "text/plain"
-
-            };
-        }
-
         public async Task<string> SaveFileAsync(IFormFile file, CancellationToken cancellationToken)
         {
-            var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-            var guid = Guid.NewGuid().ToString("N")[..8];
-            var key = $"uploads/{timestamp}_{guid}.txt";
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var normalizedS3Key = Uri.EscapeDataString(file.FileName);
+
+            var key = $"uploads/{timestamp}_{normalizedS3Key}.txt";
+
             try
             {
                 using var stream = file.OpenReadStream();

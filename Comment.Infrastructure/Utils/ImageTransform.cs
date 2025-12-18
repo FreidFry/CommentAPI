@@ -14,100 +14,113 @@ namespace Comment.Infrastructure.Utils
         {
             _fileProvider = fileProvider;
         }
-        public async Task<string> CreateTumbnailAsync(IFormFile file, string dir, string newName, CancellationToken cancellationToken)
+        public static async Task<MemoryStream> CreateTumbnailAsync(IFormFile file, CancellationToken cancellationToken)
         {
-            var ext = ".jpg";
-            var outputPath = Path.Combine(dir, $"{newName}_tumb{ext}");
+            using var outputStream = new MemoryStream();
+
             using var stream = file.OpenReadStream();
             using var image = await Image.LoadAsync(stream, cancellationToken);
 
             if (image.Width > 320 || image.Height > 240)
-            {
                 image.Mutate(x => x.Resize(new ResizeOptions
                 {
                     Mode = ResizeMode.Max,
                     Size = new Size(320, 240)
                 }));
-            }
-            image.Save($"{outputPath}", new JpegEncoder
+            await image.SaveAsJpegAsync(outputStream, new JpegEncoder
             {
                 Quality = 80
-            });
+            }, cancellationToken);
 
-            return outputPath;
+            return outputStream;
         }
 
-        private async Task<string> ResizeGifAsync(IFormFile file, string path, string dir, string newName, CancellationToken cancellationToken)
+        private static async Task<MemoryStream> CreateTumbnailGifAsync(IFormFile file, CancellationToken cancellationToken)
         {
-            var ext = ".gif";
-            var outputPath = Path.Combine(dir, $"{newName}_thumb{ext}");
+            using var outputStream = new MemoryStream();
+
             using var stream = file.OpenReadStream();
-            using var image = await Image.LoadAsync(stream);
+            using var image = await Image.LoadAsync(stream, cancellationToken);
 
             if (image.Width > 320 || image.Height > 240)
-            {
                 image.Mutate(x => x.Resize(new ResizeOptions
                 {
                     Mode = ResizeMode.Max,
                     Size = new Size(320, 240)
                 }));
-                image.Save($"{outputPath}", new GifEncoder
-                {
-                    ColorTableMode = GifColorTableMode.Global,
-                    Quantizer = new SixLabors.ImageSharp.Processing.Processors.Quantization.OctreeQuantizer()
-                });
 
-                return outputPath;
-            }
-            return path;
+            await image.SaveAsGifAsync(outputStream, new GifEncoder
+            {
+                ColorTableMode = GifColorTableMode.Global,
+                Quantizer = new SixLabors.ImageSharp.Processing.Processors.Quantization.OctreeQuantizer()
+            }, cancellationToken);
+
+            return outputStream;
         }
 
-        private async Task<string> ChangeExtensionAsync(IFormFile file, string dir, string newName, CancellationToken cancellationToken)
+        private static async Task<MemoryStream> GetOriginalImageAsync(IFormFile file, CancellationToken cancellationToken)
         {
-            var ext = ".jpg";
-            var outputPath = Path.Combine(dir, $"{newName}{ext}");
+            var outputStream = new MemoryStream();
             using var stream = file.OpenReadStream();
             using var image = await Image.LoadAsync(stream, cancellationToken);
 
-            image.Save($"{outputPath}", new JpegEncoder
+            await image.SaveAsJpegAsync(outputStream, new JpegEncoder
             {
                 Quality = 70
             });
-            return outputPath;
+            return outputStream;
         }
 
-        private static string GetNewName()
+        private static async Task<MemoryStream> GetOriginalGifAsync(IFormFile file, CancellationToken cancellationToken)
         {
-            var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-            var guid = Guid.NewGuid().ToString("N")[..5];
-            return $"{timestamp}{guid}";
+            using var outputStream = new MemoryStream();
+
+            using var stream = file.OpenReadStream();
+            using var image = await Image.LoadAsync(stream, cancellationToken);
+            await image.SaveAsGifAsync(outputStream, new GifEncoder
+            {
+                ColorTableMode = GifColorTableMode.Global,
+                Quantizer = new SixLabors.ImageSharp.Processing.Processors.Quantization.OctreeQuantizer()
+            }, cancellationToken);
+
+            return outputStream;
+        }
+
+        private static string GetNewFileName(string name)
+        {
+            var newName = Uri.EscapeDataString(name);
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            return $"{timestamp}_{newName}";
         }
 
         public async Task<(string imageUrl, string imageTumbnailUrl)> ProcessAndUploadImageAsync(IFormFile file, CancellationToken cancellationToken)
         {
-            var filename = file.FileName;
-            var dir = Path.GetDirectoryName(filename)!;
-            var newName = GetNewName();
+            var newName = GetNewFileName(file.FileName);
+            var type = "image/jpeg";
 
-            var tumbnail = await CreateTumbnailAsync(file, dir, newName, cancellationToken);
-            var original = await ChangeExtensionAsync(file, dir, newName, cancellationToken);
+            var tumbnail = await CreateTumbnailAsync(file, cancellationToken);
+            var original = await GetOriginalImageAsync(file, cancellationToken);
 
-            var tumbnailUrl = await _fileProvider.SaveImageAsync(tumbnail, cancellationToken);
-            var originalUlr = await _fileProvider.SaveImageAsync(original, cancellationToken);
-            File.Delete(Path.Combine(dir, filename));
+            var tumbnailUrl = await _fileProvider.SaveImageAsync(tumbnail, newName, type, cancellationToken);
+            var originalUlr = await _fileProvider.SaveImageAsync(original, newName, type, cancellationToken);
+
+            File.Delete(file.FileName);
             return (originalUlr, tumbnailUrl);
         }
 
-        public async Task<string> ProcessAndUploadGifAsync(IFormFile file, CancellationToken cancellationToken)
+        public async Task<(string gifUrl, string gifTumbnailUrl)> ProcessAndUploadGifAsync(IFormFile file, CancellationToken cancellationToken)
         {
-            var filename = file.FileName;
-            var dir = Path.GetDirectoryName(filename)!;
-            var name = Path.GetFileNameWithoutExtension(filename);
+            var newName = GetNewFileName(file.FileName);
+            var type = "image/gif";
 
-            var resized = await ResizeGifAsync(file, filename, dir, name, cancellationToken);
+            var tumbnail = await CreateTumbnailGifAsync(file, cancellationToken);
+            var originall = await GetOriginalGifAsync(file, cancellationToken);
 
-            var resizedlurl = await _fileProvider.SaveImageAsync(resized, cancellationToken);
-            return resizedlurl;
+            var tumbnailUrl = await _fileProvider.SaveImageAsync(tumbnail, newName, type, cancellationToken);
+            var originallUrl = await _fileProvider.SaveImageAsync(tumbnail, newName, type, cancellationToken);
+
+            File.Delete(file.FileName);
+            return (originallUrl, tumbnailUrl);
         }
     }
 }
