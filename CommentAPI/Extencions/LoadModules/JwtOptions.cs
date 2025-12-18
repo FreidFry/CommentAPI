@@ -1,7 +1,6 @@
 ﻿using Comment.Core.Interfaces;
-using Microsoft.Extensions.Configuration;
 
-namespace Comment.Core.Data
+namespace CommentAPI.Extencions.LoadModules
 {
     public class JwtOptions : IJwtOptions
     {

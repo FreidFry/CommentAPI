@@ -3,6 +3,9 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using Comment.Core.Interfaces;
+using Microsoft.AspNetCore.Http;
+using System;
+using System.IO;
 
 namespace Comment.Infrastructure.Storages
 {
@@ -15,7 +18,7 @@ namespace Comment.Infrastructure.Storages
         {
             _apiOptions = apiOptions;
 
-            var endpointUrl = apiOptions.StorageUrl;
+            var endpointUrl = apiOptions.ImageStorageUrl;
 
             var config = new AmazonS3Config
             {
@@ -23,7 +26,7 @@ namespace Comment.Infrastructure.Storages
                 ForcePathStyle = true
             };
 
-            var credentials = new BasicAWSCredentials(apiOptions.AccessKeyId, apiOptions.SecretAccessKey);
+            var credentials = new BasicAWSCredentials(apiOptions.ImageAccessKeyId, apiOptions.ImageSecretAccessKey);
             _s3Client = new AmazonS3Client(credentials, config);
         }
 
@@ -33,12 +36,10 @@ namespace Comment.Infrastructure.Storages
         /// <param name="path">Local path to the file</param>
         /// <param name="cancellationToken">Сancellation Token</param>
         /// <returns>Public URL of the uploaded file</returns>
-        public async Task<string> SaveFileAsync(string path, CancellationToken cancellationToken)
+        public async Task<string> SaveImageAsync(string path, CancellationToken cancellationToken)
         {
             if (!File.Exists(path))
-            {
                 throw new FileNotFoundException($"File not found: {path}");
-            }
 
             try
             {
@@ -50,7 +51,7 @@ namespace Comment.Infrastructure.Storages
                 var s = new TransferUtility(_s3Client);
                 var uploadRequest = new TransferUtilityUploadRequest
                 {
-                    BucketName = _apiOptions.BucketName,
+                    BucketName = _apiOptions.ImageBucketName,
                     Key = key,
                     FilePath = path,
                     ContentType = GetContentType(fileName),
@@ -58,8 +59,8 @@ namespace Comment.Infrastructure.Storages
                 };
                 await s.UploadAsync(uploadRequest, cancellationToken);
 
-                var fileUrl = $"{_apiOptions.ServiceUrl.TrimEnd('/')}/{key}";
-                
+                var fileUrl = $"{_apiOptions.ImagePublicUrl.TrimEnd('/')}/{key}";
+
                 try
                 {
                     File.Delete(path);
@@ -94,7 +95,7 @@ namespace Comment.Infrastructure.Storages
             }
 
             var key = url.TrimStart('/');
-            return await Task.FromResult($"{_apiOptions.ServiceUrl.TrimEnd('/')}/{key}");
+            return await Task.FromResult($"{_apiOptions.ImagePublicUrl.TrimEnd('/')}/{key}");
         }
 
         /// <summary>
@@ -110,7 +111,7 @@ namespace Comment.Infrastructure.Storages
 
                 var request = new GetObjectMetadataRequest
                 {
-                    BucketName = _apiOptions.BucketName,
+                    BucketName = _apiOptions.ImageBucketName,
                     Key = key
                 };
 
@@ -140,12 +141,12 @@ namespace Comment.Infrastructure.Storages
 
                 var request = new DeleteObjectRequest
                 {
-                    BucketName = _apiOptions.BucketName,
+                    BucketName = _apiOptions.ImageBucketName,
                     Key = key
                 };
 
                 await _s3Client.DeleteObjectAsync(request, cancellationToken);
-                
+
             }
             catch (AmazonS3Exception s3Ex)
             {
@@ -176,6 +177,37 @@ namespace Comment.Infrastructure.Storages
                 _ => "text/plain"
 
             };
+        }
+
+        public async Task<string> SaveFileAsync(IFormFile file, CancellationToken cancellationToken)
+        {
+
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+            var guid = Guid.NewGuid().ToString("N")[..8];
+            var key = $"uploads/{timestamp}_{guid}.txt";
+            try
+            {
+                using var stream = file.OpenReadStream();
+
+                var s = new TransferUtility(_s3Client);
+                var uploadRequest = new TransferUtilityUploadRequest
+                {
+                    InputStream = stream,
+                    BucketName = _apiOptions.txtBucketName,
+                    Key = key,
+                    DisablePayloadSigning = true,
+                    ContentType = "text/plain"
+                };
+                await s.UploadAsync(uploadRequest, cancellationToken);
+
+                var fileUrl = $"{_apiOptions.txtPublicUrl.TrimEnd('/')}/{key}";
+                return fileUrl;
+            }
+            catch (Exception ex)
+            {
+                throw;
+
+            }
         }
     }
 }

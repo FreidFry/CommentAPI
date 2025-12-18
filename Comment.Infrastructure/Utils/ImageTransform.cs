@@ -65,8 +65,8 @@ namespace Comment.Infrastructure.Utils
             var tumbnail = await CreateTumbnailAsync(file, filename, dir, name, cancellationToken);
             var resized = await ResizeImageAsync(file, filename, dir, name, cancellationToken);
 
-            var tumbnailurl = await _fileProvider.SaveFileAsync(tumbnail, cancellationToken);
-            var resizedlurl = await _fileProvider.SaveFileAsync(resized, cancellationToken);
+            var tumbnailurl = await _fileProvider.SaveImageAsync(tumbnail, cancellationToken);
+            var resizedlurl = await _fileProvider.SaveImageAsync(resized, cancellationToken);
             return (resizedlurl, tumbnailurl);
         }
     }

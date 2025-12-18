@@ -22,6 +22,7 @@ namespace Comment.Infrastructure.Services.Comment
         private readonly IValidator<CommentFindDTO> _findValidator;
         private readonly IImageTransform _imageTransform;
         private readonly IHtmlSanitize _htmlSanitizer;
+        private readonly IFileProvider _fileProvider;
 
         public CommentService(
             AppDbContext appDbContext,
@@ -30,7 +31,8 @@ namespace Comment.Infrastructure.Services.Comment
             IValidator<CommentUpdateDTO> updateValidator,
             IValidator<CommentFindDTO> findValidator,
             IImageTransform imageTransform,
-            IHtmlSanitize htmlSanitizer)
+            IHtmlSanitize htmlSanitizer,
+            IFileProvider fileProvider)
 
         {
             _appDbContext = appDbContext;
@@ -40,6 +42,7 @@ namespace Comment.Infrastructure.Services.Comment
             _findValidator = findValidator;
             _imageTransform = imageTransform;
             _htmlSanitizer = htmlSanitizer;
+            _fileProvider = fileProvider;
         }
 
         public async Task<IActionResult> GetByThreadAsync(CommentsByThreadDTO dto, CancellationToken cancellationToken)
@@ -149,6 +152,19 @@ namespace Comment.Infrastructure.Services.Comment
             {
                 var (imageUrl, imageTumbnailUrl) = await _imageTransform.ProcessAndUploadImageAsync(dto.FormFile, cancellationToken);
                 comment.SetImageUrls(imageUrl, imageTumbnailUrl);
+            }
+
+            switch (dto.FormFile?.ContentType)
+            {
+                case "image/jpeg":
+                case "image/png":
+                    await _imageTransform.ProcessAndUploadImageAsync(dto.FormFile, cancellationToken);
+                    break;
+                case "plain/text":
+                    _fileProvider.SaveFileAsync(dto.FormFile, cancellationToken);
+                    break;
+                default:
+                    break;
             }
 
 
