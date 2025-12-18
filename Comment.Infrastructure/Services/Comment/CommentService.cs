@@ -157,7 +157,13 @@ namespace Comment.Infrastructure.Services.Comment
                     (string imageUrl, string tumbnailUrl) = await _imageTransform.ProcessAndUploadImageAsync(dto.FormFile, cancellationToken);
                     comment.SetImageUrls(imageUrl, tumbnailUrl);
                     break;
+                case "image/gif":
+                    string gifUrl = await _imageTransform.ProcessAndUploadGifAsync(dto.FormFile, cancellationToken);
+                    comment.SetImageUrls(gifUrl, gifUrl);
+                    break;
                 case "text/plain":
+                    if (dto.FormFile.Length > 100 * 1024) // 100 KB
+                        return new BadRequestObjectResult("Text file size exceeds the limit of 100 KB");
                     var fileUrl = await _fileProvider.SaveFileAsync(dto.FormFile, cancellationToken);
                     comment.SetFileUrl(fileUrl);
                     break;

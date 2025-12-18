@@ -6,6 +6,6 @@ namespace Comment.Core.Interfaces
     {
         Task<string> CreateTumbnailAsync(IFormFile file, string path, string dir, string name, CancellationToken cancellationToken);
         Task<(string imageUrl, string imageTumbnailUrl)> ProcessAndUploadImageAsync(IFormFile file, CancellationToken cancellationToken);
-        Task<string> ResizeImageAsync(IFormFile file, string path, string dir, string name, CancellationToken cancellationToken);
+        Task<string> ProcessAndUploadGifAsync(IFormFile file, CancellationToken cancellationToken);
     }
 }
