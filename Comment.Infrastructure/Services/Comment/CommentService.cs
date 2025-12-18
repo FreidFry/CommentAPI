@@ -161,12 +161,11 @@ namespace Comment.Infrastructure.Services.Comment
                     await _imageTransform.ProcessAndUploadImageAsync(dto.FormFile, cancellationToken);
                     break;
                 case "plain/text":
-                    _fileProvider.SaveFileAsync(dto.FormFile, cancellationToken);
+                    await _fileProvider.SaveFileAsync(dto.FormFile, cancellationToken);
                     break;
                 default:
                     break;
             }
-
 
             await _appDbContext.Comments.AddAsync(comment, cancellationToken);
             await _appDbContext.SaveChangesAsync(cancellationToken);
