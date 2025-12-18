@@ -94,12 +94,13 @@ namespace Comment.Infrastructure.Services.Comment
                 return new BadRequestObjectResult(validationResult.Errors);
 
             var comment = await _appDbContext.Comments
-                .Where(c => c.Id == dto.CommentId && !c.IsDeleted)
-                .Include(c => c.User)
+                .Where(c => c.Id == dto.CommentId && !c.IsDeleted && !c.User.IsBanned && !c.User.IsDeleted)
+                .OrderByDescending(c => c.CreatedAt)
                 .Select(c => new CommentResponseDTO
                 {
                     Id = c.Id,
                     Content = c.Content,
+                    Email = c.User.Email,
                     CreatedAt = c.CreatedAt,
                     UpdatedAt = c.UpdatedAt,
                     ThreadId = c.ThreadId,

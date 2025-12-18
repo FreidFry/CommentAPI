@@ -13,7 +13,7 @@ namespace Comment.Infrastructure.Maps
                 .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))
                 .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.Context))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
-                .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.Comments.Count(c => !c.IsDeleted)));
+                .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.Comments.Count(c => !c.IsDeleted && !c.IsBaned)));
 
             CreateMap<ThreadModel, ThreadResponseDTO>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
@@ -23,8 +23,8 @@ namespace Comment.Infrastructure.Maps
                 .ForMember(dest => dest.OwnerUserName, opt => opt.MapFrom(src => src.OwnerUser.UserName))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
                 .ForMember(dest => dest.LastUpdatedAt, opt => opt.MapFrom(src => src.LastUpdatedAt))
-                .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.Comments.Count(c => !c.IsDeleted)))
-                .ForMember(dest => dest.Comments, opt => opt.MapFrom(src => src.Comments.ToList()));
+                .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.Comments.Count(c => !c.IsDeleted && !c.IsBaned)))
+                .ForMember(dest => dest.Comments, opt => opt.MapFrom(src => src.Comments.Where(c => !c.IsDeleted && !c.IsDeleted).OrderByDescending(c => c.CreatedAt)));
         }
     }
 }

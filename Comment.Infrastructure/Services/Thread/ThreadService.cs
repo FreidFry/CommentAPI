@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Comment.Core.Data;
 using Comment.Core.Persistence;
-using Comment.Infrastructure.Services.Comment.DTOs.Response;
 using Comment.Infrastructure.Services.Thread.DTOs.Request;
 using Comment.Infrastructure.Services.Thread.DTOs.Response;
 using Comment.Infrastructure.Utils;
@@ -87,21 +87,7 @@ namespace Comment.Infrastructure.Services.Thread
 
             var thread = await _appDbContext.Threads
                 .Where(t => t.Id == dto.ThreadId && (t.OwnerId == callerId || !t.IsDeleted))
-                .Include(t => t.Comments)
-                .Include(t => t.OwnerUser)
-                .OrderBy(t => t.CreatedAt)
-                .Select(t => new ThreadResponseDTO
-                {
-                    Id = t.Id,
-                    Title = t.Title,
-                    Context = t.Context,
-                    OwnerId = t.OwnerId,
-                    OwnerUserName = t.OwnerUser.UserName,
-                    CreatedAt = t.CreatedAt,
-                    LastUpdatedAt = t.LastUpdatedAt,
-                    CommentCount = t.Comments.Count(c => !c.IsDeleted && !c.IsBaned),
-                    Comments = _mapper.Map<ICollection<CommentResponseDTO>>(t.Comments.Where(c => !c.IsBaned && !c.IsDeleted && !c.User.IsDeleted && !c.User.IsBanned))
-                })
+                .ProjectTo<ThreadResponseDTO>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (thread == null)

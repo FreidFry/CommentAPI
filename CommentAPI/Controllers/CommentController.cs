@@ -17,12 +17,11 @@ namespace CommentAPI.Controllers
             _commentService = commentService;
         }
 
-        [HttpGet("{id}")]
+        [HttpGet]
         [AllowAnonymous]
         [SwaggerOperation(Summary = "Get comment by ID", Description = "Retrieves a comment by its unique identifier.")]
-        public async Task<IActionResult> GetById([FromRoute] Guid id, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetById(CommentFindDTO dto, CancellationToken cancellationToken)
         {
-            var dto = new CommentFindDTO(id);
             return await _commentService.GetByIdAsync(dto, cancellationToken);
         }
 
