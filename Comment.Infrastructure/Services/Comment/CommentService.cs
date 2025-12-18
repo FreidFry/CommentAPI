@@ -157,7 +157,7 @@ namespace Comment.Infrastructure.Services.Comment
                     (string imageUrl, string tumbnailUrl) = await _imageTransform.ProcessAndUploadImageAsync(dto.FormFile, cancellationToken);
                     comment.SetImageUrls(imageUrl, tumbnailUrl);
                     break;
-                case "plain/text":
+                case "text/plain":
                     var fileUrl = await _fileProvider.SaveFileAsync(dto.FormFile, cancellationToken);
                     comment.SetFileUrl(fileUrl);
                     break;
