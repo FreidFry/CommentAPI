@@ -1,5 +1,6 @@
-using Comment.Core.Data;
+﻿using Comment.Core.Data;
 using CommentAPI.Extencions.LoadModules;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +19,16 @@ builder.Services.AddRouting(options =>
 var kestrelConfig = new KestrelConfig(builder.Configuration);
 builder.Services.AddPortConfiguration(builder.WebHost, kestrelConfig);
 
+var apiConfig = new ApiOptions(builder.Configuration);
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(new Uri(apiConfig.RabbitMqConnect));
+
+        cfg.ConfigureEndpoints(context);
+    });
+});
 builder.Services.AddResponseCompression(options =>
 {
     options.EnableForHttps = true;
@@ -31,7 +42,7 @@ builder.Services.AddDipedencyInjections();
 
 
 var jwtOptions = new JwtOptions(builder.Configuration);
-    builder.Services.AddJwtAuthentication(jwtOptions);
+builder.Services.AddJwtAuthentication(jwtOptions);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));

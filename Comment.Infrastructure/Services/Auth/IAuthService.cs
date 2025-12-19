@@ -7,7 +7,7 @@ namespace Comment.Infrastructure.Services.Auth
     public interface IAuthService
     {
         Task<IActionResult> Init(HttpContext httpContext);
-        Task<IActionResult> LoginAsync(UserLoginDto UserDto, HttpContext httpContext, CancellationToken cancellationToken);
+        Task<IActionResult> LoginAsync(UserLoginRequest UserDto, HttpContext httpContext, CancellationToken cancellationToken);
         void Logout(HttpContext httpContext);
         Task<IActionResult> RegisterAsync(UserRegisterDto UserDto, HttpContext httpContext, CancellationToken cancellationToken);
     }

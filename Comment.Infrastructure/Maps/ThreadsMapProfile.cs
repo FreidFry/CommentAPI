@@ -23,8 +23,7 @@ namespace Comment.Infrastructure.Maps
                 .ForMember(dest => dest.OwnerUserName, opt => opt.MapFrom(src => src.OwnerUser.UserName))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
                 .ForMember(dest => dest.LastUpdatedAt, opt => opt.MapFrom(src => src.LastUpdatedAt))
-                .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.Comments.Count(c => !c.IsDeleted && !c.IsBaned)))
-                .ForMember(dest => dest.Comments, opt => opt.MapFrom(src => src.Comments.Where(c => !c.IsDeleted && !c.IsDeleted).OrderByDescending(c => c.CreatedAt)));
+                .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.Comments.Count(c => !c.IsDeleted && !c.IsBaned)));
         }
     }
 }

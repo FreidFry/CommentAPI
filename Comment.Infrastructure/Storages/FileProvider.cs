@@ -167,14 +167,14 @@ namespace Comment.Infrastructure.Storages
                 var uploadRequest = new TransferUtilityUploadRequest
                 {
                     InputStream = stream,
-                    BucketName = _apiOptions.txtBucketName,
+                    BucketName = _apiOptions.TxtBucketName,
                     Key = key,
                     DisablePayloadSigning = true,
                     ContentType = "text/plain; charset=utf-8"
                 };
                 await s.UploadAsync(uploadRequest, cancellationToken);
 
-                var fileUrl = $"{_apiOptions.txtPublicUrl.TrimEnd('/')}/{key}";
+                var fileUrl = $"{_apiOptions.TxtPublicUrl.TrimEnd('/')}/{key}";
                 return fileUrl;
             }
             catch (Exception ex)

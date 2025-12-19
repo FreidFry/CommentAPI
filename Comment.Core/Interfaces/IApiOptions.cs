@@ -8,10 +8,11 @@
         string ImagePublicUrl { get; }
         string ImageBucketName { get; }
         string ImageStorageUrl { get; }
-        string txtAccessKeyId { get; }
-        string txtSecretAccessKey { get; }
-        string txtPublicUrl { get; }
-        string txtStorageUrl { get; }
-        string txtBucketName { get; }
+        string TxtAccessKeyId { get; }
+        string TxtSecretAccessKey { get; }
+        string TxtPublicUrl { get; }
+        string TxtStorageUrl { get; }
+        string TxtBucketName { get; }
+        string RabbitMqConnect { get; }
     }
 }

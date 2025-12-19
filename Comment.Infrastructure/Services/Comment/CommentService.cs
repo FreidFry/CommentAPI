@@ -55,22 +55,23 @@ namespace Comment.Infrastructure.Services.Comment
                 return new NotFoundResult();
 
             var query = _appDbContext.Comments
-                .Where(c => c.ThreadId == dto.ThreadId && !c.IsDeleted)
-                .Include(c => c.User)
-                .OrderByDescending(c => c.CreatedAt);
+                .Where(c => c.ThreadId == dto.ThreadId && !c.User.IsDeleted && !c.User.IsBanned);
+
+            var rootList = query.Where(c => c.ParentDepth == 0);
 
             if (dto.After.HasValue)
-                query = (IOrderedQueryable<CommentModel>)query.Where(c => c.CreatedAt > dto.After);
+                rootList = (IOrderedQueryable<CommentModel>)query.Where(c => c.CreatedAt > dto.After);
 
             var comments = await query
-                .Where(c => c.ParentDepth == 0)
                 .OrderByDescending(c => c.CreatedAt)
+                .Take(25)
                 .ProjectTo<CommentResponseDTO>(_mapper.ConfigurationProvider)
-                .Take(dto.Limit > 0 ? dto.Limit : 10)
                 .ToListAsync(cancellationToken);
 
             DateTime? nextCursor = comments.LastOrDefault()?.CreatedAt;
-            bool HasMore = await query.Skip(dto.Limit).AnyAsync(cancellationToken);
+            bool HasMore = false;
+            if (nextCursor.HasValue)
+                HasMore = await rootList.AnyAsync(c => c.CreatedAt < nextCursor.Value, cancellationToken);
 
             return new OkObjectResult(new { items = comments, nextCursor, HasMore });
         }
@@ -94,7 +95,6 @@ namespace Comment.Infrastructure.Services.Comment
 
             if (comment == null)
                 return new NotFoundObjectResult("Comment not found");
-
             return new OkObjectResult(comment);
         }
 

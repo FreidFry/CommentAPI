@@ -1,5 +1,6 @@
 using Comment.Infrastructure.Services.Auth;
 using Comment.Infrastructure.Services.Auth.DTOs;
+using Comment.Infrastructure.Services.Auth.Login;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -12,10 +13,12 @@ namespace CommentAPI.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IAuthHandler _authHandler;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService authService, IAuthHandler authHandler)
         {
             _authService = authService;
+            _authHandler = authHandler;
         }
         
         [HttpPost("register")]
@@ -33,9 +36,9 @@ namespace CommentAPI.Controllers
         [SwaggerResponse(200, "User logged in successfully")]
         [SwaggerResponse(401, "Invalid password")]
         [SwaggerResponse(404, "Not found account")]
-        public async Task<IActionResult> Login([FromBody] UserLoginDto dto, CancellationToken cancellationToken)
+        public async Task<IActionResult> Login([FromBody] UserLoginRequest dto, CancellationToken cancellationToken)
         {
-            return await _authService.LoginAsync(dto, HttpContext, cancellationToken);
+            return await _authHandler.HandleLoginAsync(dto, HttpContext, cancellationToken);
         }
 
         [HttpPost("logout")]

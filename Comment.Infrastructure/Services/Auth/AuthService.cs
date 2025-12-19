@@ -5,11 +5,7 @@ using Comment.Infrastructure.Services.Auth.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Newtonsoft.Json.Linq;
-using System.Data;
 using static Comment.Infrastructure.Extensions.ClaimsExtensions;
-using static System.Net.WebRequestMethods;
 
 namespace Comment.Infrastructure.Services.Auth
 {
@@ -47,7 +43,7 @@ namespace Comment.Infrastructure.Services.Auth
             return new OkResult();
         }
 
-        public async Task<IActionResult> LoginAsync(UserLoginDto UserDto, HttpContext httpContext, CancellationToken cancellationToken)
+        public async Task<IActionResult> LoginAsync(UserLoginRequest UserDto, HttpContext httpContext, CancellationToken cancellationToken)
         {
             var user = await _appDbContext.Users
                 .FirstOrDefaultAsync(u => u.Email == UserDto.Email, cancellationToken);
@@ -61,7 +57,7 @@ namespace Comment.Infrastructure.Services.Auth
             _appDbContext.Users.Update(user);
             await _appDbContext.SaveChangesAsync(cancellationToken);
 
-            return new OkObjectResult(new AuthInitDTO(user.Id, user.UserName, user.Roles.ToList()));
+            return new OkObjectResult(new { user.Id, user.UserName, List = user.Roles.ToList() });
         }
 
         public void Logout(HttpContext httpContext)
@@ -82,7 +78,7 @@ namespace Comment.Infrastructure.Services.Auth
         ];
             AppendCookie(httpContext, cookies);
             SetPartitionedCookie(httpContext);
-            return new OkObjectResult(new AuthInitDTO(id, userName, roles));
+            return new OkObjectResult(new { id, userName, roles });
         }
 
         void SetJwtCookie(HttpContext http, UserModel user)
