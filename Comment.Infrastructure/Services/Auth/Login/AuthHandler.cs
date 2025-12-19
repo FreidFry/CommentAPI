@@ -1,6 +1,7 @@
 ﻿using Comment.Core.Interfaces;
 using Comment.Core.Persistence;
 using Comment.Infrastructure.Services.Auth.DTOs;
+using Comment.Infrastructure.Services.Auth.Login.Response;
 using MassTransit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -30,8 +31,8 @@ namespace Comment.Infrastructure.Services.Auth.Login
                 return new OkObjectResult(new { data.Id, data.UserName, data.Roles });
             }
 
-            if (response.Is(out Response<NotFoundResult> notFount)) return notFount.Message;
-            if (response.Is(out Response<UnauthorizedResult> notUnauthorized)) return notUnauthorized.Message;
+            if (response.Is(out Response<LoginNotFound> notFount)) return new NotFoundResult();
+            if (response.Is(out Response<LoginUnauthorized> notUnauthorized)) return new UnauthorizedResult();
 
             return new StatusCodeResult(500);
         }
