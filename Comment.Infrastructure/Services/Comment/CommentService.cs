@@ -1,4 +1,5 @@
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Comment.Core.Data;
 using Comment.Core.Interfaces;
 using Comment.Core.Persistence;
@@ -64,21 +65,8 @@ namespace Comment.Infrastructure.Services.Comment
             var comments = await query
                 .Where(c => c.ParentDepth == 0)
                 .OrderByDescending(c => c.CreatedAt)
-                .Select(c => new CommentResponseDTO
-                {
-                    Id = c.Id,
-                    Content = c.Content,
-                    CreatedAt = c.CreatedAt,
-                    UpdatedAt = c.UpdatedAt,
-                    ThreadId = c.ThreadId,
-                    ParentCommentId = c.ParentCommentId,
-                    UserId = c.UserId,
-                    UserName = c.User.UserName,
-                    AvatarTumbnailUrl = c.User.AvatarTumbnailUrl,
-                    ImageTumbnailUrl = c.ImageTumbnailUrl,
-                    ImageUrl = c.ImageUrl
-                })
-                .Take(dto.Limit)
+                .ProjectTo<CommentResponseDTO>(_mapper.ConfigurationProvider)
+                .Take(dto.Limit > 0 ? dto.Limit : 10)
                 .ToListAsync(cancellationToken);
 
             DateTime? nextCursor = comments.LastOrDefault()?.CreatedAt;
@@ -93,22 +81,15 @@ namespace Comment.Infrastructure.Services.Comment
             if (!validationResult.IsValid)
                 return new BadRequestObjectResult(validationResult.Errors);
 
-            var comment = await _appDbContext.Comments
-                .Where(c => c.Id == dto.CommentId && !c.IsDeleted && !c.User.IsBanned && !c.User.IsDeleted)
+            var query = _appDbContext.Comments.Where(c => !c.IsDeleted && !c.User.IsBanned && !c.User.IsDeleted);
+
+            if (dto.after.HasValue)
+                query = _appDbContext.Comments.Where(c => c.CreatedAt > dto.after);
+
+            var comment = await query
+                .Where(c => c.Id == dto.CommentId)
                 .OrderByDescending(c => c.CreatedAt)
-                .Select(c => new CommentResponseDTO
-                {
-                    Id = c.Id,
-                    Content = c.Content,
-                    Email = c.User.Email,
-                    CreatedAt = c.CreatedAt,
-                    UpdatedAt = c.UpdatedAt,
-                    ThreadId = c.ThreadId,
-                    ParentCommentId = c.ParentCommentId,
-                    UserId = c.UserId,
-                    UserName = c.User.UserName,
-                    AvatarTumbnailUrl = c.User.AvatarTumbnailUrl
-                })
+                .ProjectTo<CommentResponseDTO>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (comment == null)
@@ -149,31 +130,31 @@ namespace Comment.Infrastructure.Services.Comment
 
                 comment.AddParent(parentComment);
             }
-                switch (dto.FormFile?.ContentType)
-                {
-                    case "image/jpeg":
-                    case "image/png":
-                        (string imageUrl, string tumbnailUrl) = await _imageTransform.ProcessAndUploadImageAsync(dto.FormFile, cancellationToken);
-                        comment.SetImageUrls(imageUrl, tumbnailUrl);
-                        break;
-                    case "image/gif":
-                        (string gifUrl, string tumbnailGif) = await _imageTransform.ProcessAndUploadGifAsync(dto.FormFile, cancellationToken);
-                        comment.SetImageUrls(gifUrl, tumbnailGif);
-                        break;
-                    case "text/plain":
-                        if (dto.FormFile.Length > 100 * 1024) // 100 KB
-                            return new BadRequestObjectResult("Text file size exceeds the limit of 100 KB");
-                        var fileUrl = await _fileProvider.SaveFileAsync(dto.FormFile, cancellationToken);
-                        comment.SetFileUrl(fileUrl);
-                        break;
-                    default:
-                        break;
-                }
+            switch (dto.FormFile?.ContentType)
+            {
+                case "image/jpeg":
+                case "image/png":
+                    (string imageUrl, string tumbnailUrl) = await _imageTransform.ProcessAndUploadImageAsync(dto.FormFile, cancellationToken);
+                    comment.SetImageUrls(imageUrl, tumbnailUrl);
+                    break;
+                case "image/gif":
+                    (string gifUrl, string tumbnailGif) = await _imageTransform.ProcessAndUploadGifAsync(dto.FormFile, cancellationToken);
+                    comment.SetImageUrls(gifUrl, tumbnailGif);
+                    break;
+                case "text/plain":
+                    if (dto.FormFile.Length > 100 * 1024) // 100 KB
+                        return new BadRequestObjectResult("Text file size exceeds the limit of 100 KB");
+                    var fileUrl = await _fileProvider.SaveFileAsync(dto.FormFile, cancellationToken);
+                    comment.SetFileUrl(fileUrl);
+                    break;
+                default:
+                    break;
+            }
 
-                await _appDbContext.Comments.AddAsync(comment, cancellationToken);
-                await _appDbContext.SaveChangesAsync(cancellationToken);
+            await _appDbContext.Comments.AddAsync(comment, cancellationToken);
+            await _appDbContext.SaveChangesAsync(cancellationToken);
 
-                return new OkResult();
+            return new OkResult();
         }
 
         public async Task<IActionResult> UpdateAsync(CommentUpdateDTO dto, HttpContext httpContext, CancellationToken cancellationToken)
