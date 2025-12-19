@@ -13,9 +13,11 @@ namespace Comment.Infrastructure.Services.Auth.Login
         private readonly IJwtProvider _jwtProvider;
         private readonly IJwtOptions _jwtOptions;
         private readonly IRequestClient<UserLoginRequest> _client;
-        public AuthHandler(IRequestClient<UserLoginRequest> client)
+        public AuthHandler(IRequestClient<UserLoginRequest> client, IJwtOptions jwtOptions, IJwtProvider jwtProvider)
         {
             _client = client;
+            _jwtProvider = jwtProvider;
+            _jwtOptions = jwtOptions;
         }
 
         public async Task<IActionResult> HandleLoginAsync(UserLoginRequest request, HttpContext httpContext, CancellationToken cancellationToken)
