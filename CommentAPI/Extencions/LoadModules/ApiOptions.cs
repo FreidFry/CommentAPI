@@ -43,10 +43,10 @@ namespace CommentAPI.Extencions.LoadModules
         #endregion
         public ApiOptions(IConfiguration config)
         {
-            DbName = config["DB:DbName"] ?? throw new ArgumentNullException("DB:DbName");
-            DbUser = config["DB:User"] ?? throw new ArgumentNullException("DB:User");
-            DbPassword = config["DB:Password"] ?? throw new ArgumentNullException("DB:Password");
-            DbServer = config["DB:Server"] ?? throw new ArgumentNullException("DB:Server");
+            DbName = config["DB:DbName"] ?? throw new ArgumentNullException("DB__DbName");
+            DbUser = config["DB:User"] ?? throw new ArgumentNullException("DB__User");
+            DbPassword = config["DB:Password"] ?? throw new ArgumentNullException("DB__Password");
+            DbServer = config["DB:Server"] ?? throw new ArgumentNullException("DB__Server");
             DbPort = config["DB:Port"] ?? "5432";
 
             RabbitMqConnect = config["RabbitMq:ConnectString"] ?? throw new ArgumentNullException("RabbitMq__ConnectString");

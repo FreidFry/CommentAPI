@@ -2,6 +2,7 @@
 using Comment.Core.Interfaces;
 using Comment.Infrastructure.Services;
 using Comment.Infrastructure.Services.Auth;
+using Comment.Infrastructure.Services.Auth.Login;
 using Comment.Infrastructure.Services.Comment;
 using Comment.Infrastructure.Services.Comment.DTOs.Request;
 using Comment.Infrastructure.Services.Comment.Validators;
@@ -42,6 +43,12 @@ namespace CommentAPI.Extencions.LoadModules
             services.AddScoped<IThreadService, ThreadService>();
             services.AddScoped<IImageTransform, ImageTransform>();
             services.AddScoped<IJwtProvider, JwtProvider>();
+
+            #endregion
+
+            #region Handlers
+
+            services.AddScoped<IAuthHandler, AuthHandler>();
 
             #endregion
 
