@@ -86,7 +86,7 @@ namespace CommentAPI.Controllers
         )]
         public async Task<IActionResult> GetByThread([FromRoute] Guid threadId, [FromQuery] CommentsByThreadDTO dto, CancellationToken cancellationToken)
         {
-            return await _commentService.GetByThreadAsync(dto, cancellationToken);
+            return await _commentService.GetByThreadAsync(threadId, dto, cancellationToken);
         }
 
         [HttpPut]
