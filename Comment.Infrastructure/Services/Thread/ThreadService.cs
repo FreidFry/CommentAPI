@@ -60,7 +60,7 @@ namespace Comment.Infrastructure.Services.Thread
 
             var ThreadsThree = await query
                 .Take(dto.Limit)
-                .ProjectTo<ThreadsThreeResponce>(_mapper.ConfigurationProvider)
+                .ProjectTo<ThreadsThreeResponse>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
 
             bool HasMore = await query

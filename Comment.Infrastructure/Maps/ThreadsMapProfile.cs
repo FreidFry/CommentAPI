@@ -8,7 +8,7 @@ namespace Comment.Infrastructure.Maps
     {
         public ThreadsMapProfile()
         {
-            CreateMap<ThreadModel, ThreadsThreeResponce>()
+            CreateMap<ThreadModel, ThreadsThreeResponse>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))
                 .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.Context.Length > 300 ? $"{src.Context.Substring(0, 297)}..." : src.Context))
