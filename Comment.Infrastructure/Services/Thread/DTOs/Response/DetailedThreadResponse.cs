@@ -1,7 +1,7 @@
 
 namespace Comment.Infrastructure.Services.Thread.DTOs.Response
 {
-    public class ThreadResponseDTO
+    public class DetailedThreadResponse
     {
         public Guid Id { get; set; }
         public string Title { get; set; } = string.Empty;

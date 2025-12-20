@@ -9,7 +9,7 @@ namespace Comment.Infrastructure.Services.User.DTOs.Response
         public DateTime CreatedAt { get; set; }
         public string HomePage { get; set; }
         public DateTime? LastActive { get; set; }
-        public ICollection<ThreadResponseDTO> Threads { get; set; } = [];
+        public ICollection<DetailedThreadResponse> Threads { get; set; } = [];
 
 }
 }

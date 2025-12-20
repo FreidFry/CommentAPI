@@ -87,7 +87,7 @@ namespace CommentAPI.Controllers
         public async Task<IActionResult> GetByThread(
             [FromRoute] Guid threadId,
             [FromQuery] DateTime? after,
-            [FromQuery] int limit = 50,
+            [FromQuery] int limit = 25,
             CancellationToken cancellationToken = default)
         {
             var dto = new CommentsByThreadDTO(threadId, after, limit);

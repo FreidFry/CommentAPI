@@ -60,15 +60,7 @@ namespace Comment.Infrastructure.Services.Thread
 
             var ThreadsThree = await query
                 .Take(dto.Limit)
-                .Include(t => t.Comments)
-                .OrderByDescending(t => t.CreatedAt)
-                .Select(t => new ThreadsThreeDTOResponce(
-                    t.Id,
-                    t.Title,
-                    t.Context.Substring(0, 300),
-                    t.CreatedAt,
-                    t.Comments.Count(c => !c.IsDeleted && !c.IsBaned)
-                ))
+                .ProjectTo<ThreadsThreeResponce>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
             bool HasMore = await query.Skip(dto.Limit).AnyAsync(cancellationToken);
 
@@ -87,7 +79,7 @@ namespace Comment.Infrastructure.Services.Thread
 
             var thread = await _appDbContext.Threads
                 .Where(t => t.Id == dto.ThreadId && (t.OwnerId == callerId || !t.IsDeleted))
-                .ProjectTo<ThreadResponseDTO>(_mapper.ConfigurationProvider)
+                .ProjectTo<DetailedThreadResponse>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (thread == null)
@@ -118,7 +110,7 @@ namespace Comment.Infrastructure.Services.Thread
             var threadDto = await _appDbContext.Threads
                 .Where(t => t.Id == thread.Id)
                 .Include(t => t.OwnerUser)
-                .Select(t => new ThreadResponseDTO
+                .Select(t => new DetailedThreadResponse
                 {
                     Id = t.Id,
                     Title = t.Title,
@@ -164,7 +156,7 @@ namespace Comment.Infrastructure.Services.Thread
             var threadDto = await _appDbContext.Threads
                 .Where(t => t.Id == thread.Id)
                 .Include(t => t.OwnerUser)
-                .Select(t => new ThreadResponseDTO
+                .Select(t => new DetailedThreadResponse
                 {
                     Id = t.Id,
                     Title = t.Title,
