@@ -20,7 +20,7 @@ namespace CommentAPI.Controllers
         [HttpGet]
         [AllowAnonymous]
         [SwaggerOperation(Summary = "Get comment by ID", Description = "Retrieves a comment by its unique identifier.")]
-        public async Task<IActionResult> GetById(CommentFindDTO dto, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetById([FromQuery]CommentFindDTO dto, CancellationToken cancellationToken)
         {
             return await _commentService.GetByIdAsync(dto, cancellationToken);
         }
