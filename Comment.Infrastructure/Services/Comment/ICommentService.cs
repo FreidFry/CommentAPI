@@ -6,7 +6,7 @@ namespace Comment.Infrastructure.Services.Comment
 {
     public interface ICommentService
     {
-        Task<IActionResult> GetByThreadAsync(CommentsByThreadDTO dto, CancellationToken cancellationToken);
+        Task<IActionResult> GetByThreadAsync(Guid threadId, CommentsByThreadDTO dto, CancellationToken cancellationToken);
         Task<IActionResult> GetByIdAsync(CommentFindDTO dto, CancellationToken cancellationToken);
         Task<IActionResult> CreateAsync(CommentCreateDTO dto, HttpContext httpContext, CancellationToken cancellationToken);
         Task<IActionResult> UpdateAsync(CommentUpdateDTO dto, HttpContext httpContext, CancellationToken cancellationToken);

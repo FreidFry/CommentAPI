@@ -47,10 +47,10 @@ namespace Comment.Infrastructure.Services.Comment
             _fileProvider = fileProvider;
         }
 
-        public async Task<IActionResult> GetByThreadAsync(CommentsByThreadDTO dto, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetByThreadAsync(Guid threadId, CommentsByThreadDTO dto, CancellationToken cancellationToken)
         {
             var query = _appDbContext.Threads
-                .Where(t => t.Id == dto.ThreadId && !t.OwnerUser.IsDeleted && !t.OwnerUser.IsBanned);
+                .Where(t => t.Id == threadId && !t.OwnerUser.IsDeleted && !t.OwnerUser.IsBanned);
 
             var rootList = query
                .SelectMany(t => t.Comments);

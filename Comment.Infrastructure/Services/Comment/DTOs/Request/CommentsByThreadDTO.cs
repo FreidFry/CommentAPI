@@ -1,13 +1,10 @@
 using Comment.Infrastructure.Enums;
-using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
 
 namespace Comment.Infrastructure.Services.Comment.DTOs.Request
 {
     public record CommentsByThreadDTO
     {
-        [FromRoute(Name = "threadId")]
-        public Guid ThreadId { get; }
 
         [property: JsonConverter(typeof(JsonStringEnumConverter))]
         public string SortBy { get; } = "createAt";
