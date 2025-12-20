@@ -50,7 +50,7 @@ namespace Comment.Infrastructure.Services.Comment
         public async Task<IActionResult> GetByThreadAsync(Guid threadId, CommentsByThreadDTO dto, CancellationToken cancellationToken)
         {
             var query = _appDbContext.Threads
-                .Where(t => t.Id == threadId && !t.OwnerUser.IsDeleted && !t.OwnerUser.IsBanned);
+                .Where(t => t.Id == threadId && !t.OwnerUser.IsDeleted && !t.OwnerUser.IsBanned && !t.IsBanned && !t.IsDeleted);
 
             var rootList = query
                .SelectMany(t => t.Comments);
