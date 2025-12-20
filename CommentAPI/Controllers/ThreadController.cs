@@ -84,13 +84,8 @@ namespace CommentAPI.Controllers
             Summary = "Get Comments by Thread",
             Description = "Retrieve comments associated with a specific thread."
         )]
-        public async Task<IActionResult> GetByThread(
-            [FromRoute] Guid threadId,
-            [FromQuery] DateTime? after,
-            [FromQuery] int limit = 25,
-            CancellationToken cancellationToken = default)
+        public async Task<IActionResult> GetByThread([FromQuery] CommentsByThreadDTO dto, CancellationToken cancellationToken)
         {
-            var dto = new CommentsByThreadDTO(threadId, after, limit);
             return await _commentService.GetByThreadAsync(dto, cancellationToken);
         }
 
