@@ -3,6 +3,7 @@ using AutoMapper.QueryableExtensions;
 using Comment.Core.Data;
 using Comment.Core.Interfaces;
 using Comment.Core.Persistence;
+using Comment.Infrastructure.Enums;
 using Comment.Infrastructure.Services.Comment.DTOs.Request;
 using Comment.Infrastructure.Services.Comment.DTOs.Response;
 using Comment.Infrastructure.Utils;
@@ -52,22 +53,69 @@ namespace Comment.Infrastructure.Services.Comment
                 .Where(t => t.Id == dto.ThreadId && !t.OwnerUser.IsDeleted && !t.OwnerUser.IsBanned);
 
             var rootList = query
-                .SelectMany(t => t.Comments
-                    .OrderByDescending(c => c.CreatedAt)
-                    .Where(c => c.ParentDepth == 0 && !c.IsDeleted && !c.IsBaned));
+               .SelectMany(t => t.Comments);
 
-            if (dto.After.HasValue)
-                rootList = rootList.Where(с => с.CreatedAt > dto.After);
+            rootList = dto.SortByEnum switch
+            {
+                SortByEnum.Email => dto.IsAscending
+                    ? rootList.OrderBy(c => c.User.Email)
+                    : rootList.OrderByDescending(c => c.User.Email),
+                SortByEnum.UserName => dto.IsAscending
+                    ? rootList.OrderBy(c => c.User.UserName)
+                    : rootList.OrderByDescending(c => c.User.UserName),
+                SortByEnum.CreateAt => dto.IsAscending
+                    ? rootList.OrderBy(c => c.CreatedAt)
+                    : rootList.OrderByDescending(c => c.CreatedAt),
+                _ => dto.IsAscending
+                    ? rootList.OrderBy(c => c.CreatedAt)
+                    : rootList.OrderByDescending(c => c.CreatedAt)
+            };
+
+            rootList = rootList.Where(c => c.ParentDepth == 0 && !c.IsDeleted && !c.IsBaned);
+
+            if (!string.IsNullOrEmpty(dto.After))
+            {
+                rootList = dto.SortByEnum switch
+                {
+                    SortByEnum.Email => dto.IsAscending
+                        ? rootList.Where(c => string.Compare(c.User.Email, dto.After) > 0)
+                        : rootList.Where(c => string.Compare(c.User.Email, dto.After) < 0),
+                    SortByEnum.UserName => dto.IsAscending
+                        ? rootList.Where(c => string.Compare(c.User.UserName, dto.After) > 0)
+                        : rootList.Where(c => string.Compare(c.User.UserName, dto.After) < 0),
+                    SortByEnum.CreateAt => dto.IsAscending
+                        ? rootList.Where(c => c.CreatedAt > DateTime.Parse(dto.After))
+                        : rootList.Where(c => c.CreatedAt < DateTime.Parse(dto.After)),
+                    _ => dto.IsAscending
+                        ? rootList.Where(c => c.CreatedAt > DateTime.Parse(dto.After))
+                        : rootList.Where(c => c.CreatedAt < DateTime.Parse(dto.After))
+                };
+            }
 
             var comments = await rootList
-                .Take(25)
+                .Take(dto.Limit+1)
                 .ProjectTo<CommentResponseDTO>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
 
-            DateTime? nextCursor = comments.LastOrDefault()?.CreatedAt;
             bool HasMore = false;
-            if (nextCursor.HasValue)
-                HasMore = await rootList.AnyAsync(c => c.CreatedAt < nextCursor.Value, cancellationToken);
+            if (comments.Count > dto.Limit)
+            {
+                HasMore = true;
+                comments.RemoveAt(dto.Limit);
+            }
+
+            string? nextCursor = null;
+            if (HasMore)
+            {
+                var last = comments.Last();
+                nextCursor = dto.SortByEnum switch
+                {
+                    SortByEnum.Email => last.Email,
+                    SortByEnum.UserName => last.UserName,
+                    SortByEnum.CreateAt => last.CreatedAt.ToString("O"),
+                    _ => last.CreatedAt.ToString("O")
+                };
+            }
 
             return new OkObjectResult(new { items = comments, nextCursor, HasMore });
         }

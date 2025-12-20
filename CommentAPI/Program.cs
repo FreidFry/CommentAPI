@@ -3,6 +3,7 @@ using Comment.Infrastructure.Services.Auth.Login;
 using CommentAPI.Extencions.LoadModules;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,7 +40,7 @@ builder.Services.AddResponseCompression(options =>
     options.MimeTypes = ["text/plain", "text/css", "application/javascript", "application/json", "image/svg+xml"];
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(c => c.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddAutoMapperModule();
 builder.Services.AddDipedencyInjections();
