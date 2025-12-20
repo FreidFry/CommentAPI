@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Comment.Core.Data;
 using Comment.Core.Interfaces;
@@ -48,22 +48,18 @@ namespace Comment.Infrastructure.Services.Comment
 
         public async Task<IActionResult> GetByThreadAsync(CommentsByThreadDTO dto, CancellationToken cancellationToken)
         {
-            var threadExists = await _appDbContext.Threads
-                .AnyAsync(t => t.Id == dto.ThreadId && !t.IsDeleted, cancellationToken);
+            var query = _appDbContext.Threads
+                .Where(t => t.Id == dto.ThreadId && !t.OwnerUser.IsDeleted && !t.OwnerUser.IsBanned);
 
-            if (!threadExists)
-                return new NotFoundResult();
-
-            var query = _appDbContext.Comments
-                .Where(c => c.ThreadId == dto.ThreadId && !c.User.IsDeleted && !c.User.IsBanned);
-
-            var rootList = query.Where(c => c.ParentDepth == 0);
+            var rootList = query
+                .SelectMany(t => t.Comments
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Where(c => c.ParentDepth == 0 && !c.IsDeleted && !c.IsBaned));
 
             if (dto.After.HasValue)
-                rootList = (IOrderedQueryable<CommentModel>)query.Where(c => c.CreatedAt > dto.After);
+                rootList = rootList.Where(с => с.CreatedAt > dto.After);
 
-            var comments = await query
-                .OrderByDescending(c => c.CreatedAt)
+            var comments = await rootList
                 .Take(25)
                 .ProjectTo<CommentResponseDTO>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
