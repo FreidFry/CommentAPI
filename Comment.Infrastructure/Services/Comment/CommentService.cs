@@ -84,11 +84,11 @@ namespace Comment.Infrastructure.Services.Comment
                         ? rootList.Where(c => string.Compare(c.User.UserName, dto.After) > 0)
                         : rootList.Where(c => string.Compare(c.User.UserName, dto.After) < 0),
                     SortByEnum.CreateAt => dto.IsAscending
-                        ? rootList.Where(c => c.CreatedAt > DateTime.Parse(dto.After))
-                        : rootList.Where(c => c.CreatedAt < DateTime.Parse(dto.After)),
+                        ? rootList.Where(c => c.CreatedAt > DateTime.Parse(dto.After).ToUniversalTime())
+                        : rootList.Where(c => c.CreatedAt < DateTime.Parse(dto.After).ToUniversalTime()),
                     _ => dto.IsAscending
-                        ? rootList.Where(c => c.CreatedAt > DateTime.Parse(dto.After))
-                        : rootList.Where(c => c.CreatedAt < DateTime.Parse(dto.After))
+                        ? rootList.Where(c => c.CreatedAt > DateTime.Parse(dto.After).ToUniversalTime())
+                        : rootList.Where(c => c.CreatedAt < DateTime.Parse(dto.After).ToUniversalTime())
                 };
             }
 
