@@ -62,7 +62,10 @@ namespace Comment.Infrastructure.Services.Thread
                 .Take(dto.Limit)
                 .ProjectTo<ThreadsThreeResponce>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
-            bool HasMore = await query.Skip(dto.Limit).AnyAsync(cancellationToken);
+
+            bool HasMore = await query
+                .Skip(dto.Limit)
+                .AnyAsync(cancellationToken);
 
             DateTime? nextCursor = ThreadsThree.LastOrDefault()?.CreatedAt;
 
@@ -77,8 +80,10 @@ namespace Comment.Infrastructure.Services.Thread
 
             var callerId = GetCallerId(httpContext);
 
-            var thread = await _appDbContext.Threads
-                .Where(t => t.Id == dto.ThreadId && (t.OwnerId == callerId || !t.IsDeleted))
+            var query = _appDbContext.Threads
+                .Where(t => t.Id == dto.ThreadId && (t.OwnerId == callerId || !t.IsDeleted));
+
+            var thread = await query
                 .ProjectTo<DetailedThreadResponse>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(cancellationToken);
 
