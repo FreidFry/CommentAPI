@@ -8,7 +8,8 @@ namespace Comment.Infrastructure.Services.Comment.Validators
         public CommentCreateValidator()
         {
             RuleFor(x => x.CallerId)
-                .NotEmpty();
+                .NotEmpty()
+                .WithMessage("Unauthorized. Please login.");
             RuleFor(x => x.Content)
                 .NotEmpty()
                 .WithMessage("Content is required.")

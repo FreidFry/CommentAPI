@@ -19,9 +19,13 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
         private readonly IHtmlSanitize _htmlSanitizer;
         private readonly IFileProvider _fileProvider;
 
-        public CreateCommentConsumer()
+        public CreateCommentConsumer(IValidator<CommentCreateRequestDTO> createValidator, AppDbContext appDbContext, IImageTransform imageTransform, IHtmlSanitize htmlSanitizer, IFileProvider fileProvider)
         {
-            
+            _createValidator = createValidator;
+            _appDbContext = appDbContext;
+            _imageTransform = imageTransform;
+            _htmlSanitizer = htmlSanitizer;
+            _fileProvider = fileProvider;
         }
 
         public async Task Consume(ConsumeContext<CommentCreateRequestDTO> context)
@@ -29,29 +33,38 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
             var dto = context.Message;
             var validationResult = await _createValidator.ValidateAsync(dto);
             if (!validationResult.IsValid)
+            {
                 await context.RespondAsync(new ValidatorErrorResponse(validationResult.Errors));
-
-            
-
-            var user = await _appDbContext.Users.FindAsync(new object[] { dto.CallerId });
-            if (user == null || user.IsDeleted || user.IsBanned)
-                await context.RespondAsync( new MessageResponse("User not found or banned"));
+                return;
+            }
 
             var thread = await _appDbContext.Threads
-                .FirstOrDefaultAsync(t => t.Id == dto.ThreadId && !t.IsDeleted);
-
+                .FirstOrDefaultAsync(t => t.Id == dto.ThreadId && !t.IsDeleted && !t.IsBanned, context.CancellationToken);
             if (thread == null)
+            {
                 await context.RespondAsync(new MessageResponse("Thread not found"));
+                return;
+            }
+            var user = await _appDbContext.Users
+                .FirstOrDefaultAsync(u => u.Id == dto.CallerId && !u.IsBanned && !u.IsDeleted, context.CancellationToken);
+            if (user == null)
+            {
+                await context.RespondAsync(new MessageResponse("User not found"));
+                return;
+            }
+
             var comment = new CommentModel(_htmlSanitizer.Sanitize(dto.Content), user, thread);
             if (dto.ParentCommentId.HasValue)
             {
                 var parentComment = await _appDbContext.Comments
-                    .FirstOrDefaultAsync(c => c.Id == dto.ParentCommentId.Value &&
-                                             c.ThreadId == dto.ThreadId &&
-                                             !c.IsDeleted);
+                    .FirstOrDefaultAsync(c => c.Id == dto.ParentCommentId &&
+                                             c.ThreadId == dto.ThreadId);
 
                 if (parentComment == null)
-                    await context.RespondAsync("Parent comment not found or belongs to different thread");
+                {
+                    await context.RespondAsync(new MessageResponse("Parent comment not found or belongs to different thread"));
+                    return;
+                }
 
                 comment.AddParent(parentComment);
             }
@@ -79,7 +92,7 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
             await _appDbContext.Comments.AddAsync(comment, context.CancellationToken);
             await _appDbContext.SaveChangesAsync(context.CancellationToken);
 
-            context.RespondAsync(new CreateCommentSuccesResponse());
+            await context.RespondAsync(new CreateCommentSuccesResponse());
         }
     }
 }

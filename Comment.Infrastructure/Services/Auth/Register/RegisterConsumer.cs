@@ -23,11 +23,18 @@ namespace Comment.Infrastructure.Services.Auth.Register
         async Task IConsumer<UserRegisterRequest>.Consume(ConsumeContext<UserRegisterRequest> context)
         {
             if (!context.Message.Password.Equals(context.Message.ConfirmPassword))
+            {
                 await context.RespondAsync(new ConflictRegisterResponse("Passwords do not match"));
+                return;
+            }
             var existingUser = await _appDbContext.Users
                 .FirstOrDefaultAsync(u => u.UserName == context.Message.UserName);
 
-            if (existingUser != null) await context.RespondAsync(new ConflictRegisterResponse("User already exists"));
+            if (existingUser != null)
+            {
+                await context.RespondAsync(new ConflictRegisterResponse("User already exists"));
+                return;
+            }
 
             var newUser = new UserModel(context.Message.UserName, context.Message.Email, _passwordHasher.HashPassword(context.Message.Password));
 
