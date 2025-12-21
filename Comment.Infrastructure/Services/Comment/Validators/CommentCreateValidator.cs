@@ -1,15 +1,12 @@
-using Comment.Infrastructure.Services.Comment.CreateComment.Request;
+﻿using Comment.Infrastructure.Services.Comment.CreateComment.Request;
 using FluentValidation;
 
 namespace Comment.Infrastructure.Services.Comment.Validators
 {
-    public class CommentCreateValidator : AbstractValidator<CommentCreateRequestDTO>
+    public class CommentCreateValidator : AbstractValidator<CommentCreateRequest>
     {
         public CommentCreateValidator()
         {
-            RuleFor(x => x.CallerId)
-                .NotEmpty()
-                .WithMessage("Unauthorized. Please login.");
             RuleFor(x => x.Content)
                 .NotEmpty()
                 .WithMessage("Content is required.")

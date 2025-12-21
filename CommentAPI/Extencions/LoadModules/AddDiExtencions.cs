@@ -1,7 +1,5 @@
-﻿using Comment.Core.Data;
-using Comment.Core.Interfaces;
+﻿using Comment.Core.Interfaces;
 using Comment.Infrastructure.Services;
-using Comment.Infrastructure.Services.Auth;
 using Comment.Infrastructure.Services.Auth.Login;
 using Comment.Infrastructure.Services.Auth.Logout;
 using Comment.Infrastructure.Services.Auth.Register;
@@ -19,6 +17,7 @@ using Comment.Infrastructure.Services.User.DTOs.Request;
 using Comment.Infrastructure.Services.User.Validators;
 using Comment.Infrastructure.Utils;
 using FluentValidation;
+using MassTransit;
 using Microsoft.AspNetCore.Identity;
 
 namespace CommentAPI.Extencions.LoadModules
@@ -61,7 +60,7 @@ namespace CommentAPI.Extencions.LoadModules
 
             #region Validators
 
-            services.AddScoped<IValidator<CommentCreateRequestDTO>, CommentCreateValidator>();
+            services.AddScoped<IValidator<CommentCreateRequest>, CommentCreateValidator>();
             services.AddScoped<IValidator<CommentUpdateDTO>, CommentUpdateValidator>();
             services.AddScoped<IValidator<CommentFindDTO>, CommentFindValidator>();
             services.AddScoped<IValidator<ThreadCreateDTO>, ThreadCreateValidator>();

@@ -14,5 +14,7 @@
         string TxtStorageUrl { get; }
         string TxtBucketName { get; }
         string RabbitMqConnect { get; }
+        string RedisConnect { get; }
+        string RedisDataInstanceName { get; }
     }
 }

@@ -66,92 +66,6 @@ namespace Comment.Infrastructure.Services
             }
         }
 
-        /// <summary>
-        /// Gets the public URL of a file from S3
-        /// </summary>
-        /// <param name="url">URL or file key in S3</param>
-        /// <param name="cancellationToken">Сancellation Token</param>
-        /// <returns>Публичный URL файла</returns>
-        public async Task<string> GetFileUrlAsync(string url, CancellationToken cancellationToken)
-        {
-            if (Uri.TryCreate(url, UriKind.Absolute, out _))
-            {
-                return url;
-            }
-
-            var key = url.TrimStart('/');
-            return await Task.FromResult($"{_apiOptions.ImagePublicUrl.TrimEnd('/')}/{key}");
-        }
-
-        /// <summary>
-        /// Checks for the existence of a file in S3
-        /// </summary>
-        /// <param name="url">URL or file key in S3</param>
-        /// <returns>True if the file exists, otherwise False</returns>
-        public async Task<bool> FileExists(string url)
-        {
-            try
-            {
-                var key = ExtractKeyFromUrl(url);
-
-                var request = new GetObjectMetadataRequest
-                {
-                    BucketName = _apiOptions.ImageBucketName,
-                    Key = key
-                };
-
-                await _s3Client.GetObjectMetadataAsync(request);
-                return true;
-            }
-            catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                return false;
-            }
-            catch (Exception ex)
-            {
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Deletes a file from S3
-        /// </summary>
-        /// <param name="url">URL or file key in S3</param>
-        /// <param name="cancellationToken">Сancellation Token</param>
-        public async Task DeleteFileAsync(string url, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var key = ExtractKeyFromUrl(url);
-
-                var request = new DeleteObjectRequest
-                {
-                    BucketName = _apiOptions.ImageBucketName,
-                    Key = key
-                };
-
-                await _s3Client.DeleteObjectAsync(request, cancellationToken);
-
-            }
-            catch (AmazonS3Exception s3Ex)
-            {
-                throw new Exception($"Failed to delete file from S3: {s3Ex.Message}", s3Ex);
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-        }
-
-        private static string ExtractKeyFromUrl(string url)
-        {
-            if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
-            {
-                return uri.AbsolutePath.TrimStart('/');
-            }
-            return url.TrimStart('/');
-        }
-
         public async Task<string> SaveFileAsync(IFormFile file, CancellationToken cancellationToken)
         {
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -181,6 +95,37 @@ namespace Comment.Infrastructure.Services
             {
                 throw;
 
+            }
+        }
+        private static string GetNewFileName() =>
+    $"{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}_{Guid.NewGuid().ToString()[..5]}";
+
+
+        public async Task<string> SaveFileAsync(Stream stream, CancellationToken cancellationToken)
+        {
+
+            var key = $"uploads/{GetNewFileName()}";
+
+            try
+            {
+                var transferUtility = new TransferUtility(_s3Client);
+                var uploadRequest = new TransferUtilityUploadRequest
+                {
+                    InputStream = stream,
+                    BucketName = _apiOptions.TxtBucketName,
+                    Key = key,
+                    DisablePayloadSigning = true,
+                    ContentType = "text/plain; charset=utf-8"
+                };
+
+                await transferUtility.UploadAsync(uploadRequest, cancellationToken);
+
+                var fileUrl = $"{_apiOptions.TxtPublicUrl.TrimEnd('/')}/{key}";
+                return fileUrl;
+            }
+            catch (Exception ex)
+            {
+                throw;
             }
         }
     }

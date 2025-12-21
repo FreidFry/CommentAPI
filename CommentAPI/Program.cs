@@ -3,6 +3,7 @@ using Comment.Infrastructure.Services.Auth.Login;
 using CommentAPI.Extencions.LoadModules;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,13 +23,14 @@ var kestrelConfig = new KestrelConfig(builder.Configuration);
 builder.Services.AddPortConfiguration(builder.WebHost, kestrelConfig);
 
 var apiConfig = new ApiOptions(builder.Configuration);
+
+builder.Services.AddRedisCache(apiConfig);
+
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumers(typeof(LoginConsumer).Assembly);
-
     x.UsingRabbitMq((context, cfg) =>
     {
-        
         cfg.Host(new Uri(apiConfig.RabbitMqConnect));
 
         cfg.ConfigureEndpoints(context);

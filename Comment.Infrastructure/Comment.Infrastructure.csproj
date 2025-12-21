@@ -22,7 +22,12 @@
     <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="HtmlSanitizer" Version="9.0.889" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.7" />
+    <PackageReference Include="MassTransit.Redis" Version="8.5.7" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.1" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
+    <PackageReference Include="StackExchange.Redis" Version="2.10.1" />
+    <PackageReference Include="StackExchange.Redis.Extensions.AspNetCore" Version="11.0.0" />
+    <PackageReference Include="StackExchange.Redis.Extensions.System.Text.Json" Version="11.0.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />
   </ItemGroup>
 

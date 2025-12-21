@@ -1,3 +1,4 @@
+using MassTransit;
 using Microsoft.AspNetCore.Http;
 
 namespace Comment.Infrastructure.Services.Comment.CreateComment.Request
@@ -8,15 +9,23 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment.Request
         public string Content { get; set; }
         public Guid ThreadId { get; set; }
         public Guid? ParentCommentId { get; set; }
-        public IFormFile? FormFile { get; set; }
+        public string? FileKey { get; set; }
+        public string? ContentType { get; set; }
 
-        public CommentCreateRequestDTO(Guid? CallerId, CommentCreateRequest request)
+        public CommentCreateRequestDTO(
+            Guid? callerId,
+            string content,
+            Guid threadId,
+            Guid? parentCommentId,
+            string? filekey,
+            string? contentType)
         {
-            this.CallerId = CallerId;
-            Content = request.Content;
-            ThreadId = request.ThreadId;
-            ParentCommentId = request.ParentCommentId;
-            FormFile = request.FormFile;
+            CallerId = callerId;
+            Content = content;
+            ThreadId = threadId;
+            ParentCommentId = parentCommentId;
+            FileKey = filekey;
+            ContentType = contentType;
         }
 
         public CommentCreateRequestDTO() { }

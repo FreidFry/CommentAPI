@@ -145,9 +145,6 @@ namespace Comment.Infrastructure.Services.Comment
 
         public async Task<IActionResult> CreateAsync([FromForm] CommentCreateRequest dto, HttpContext httpContext, CancellationToken cancellationToken)
         {
-            //var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
-            //if (!validationResult.IsValid)
-            //    return new BadRequestObjectResult(validationResult.Errors);
 
             var callerId = GetCallerId(httpContext);
             if (callerId == null)
