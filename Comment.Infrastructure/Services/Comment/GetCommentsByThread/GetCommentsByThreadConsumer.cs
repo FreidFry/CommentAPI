@@ -2,6 +2,7 @@
 using AutoMapper.QueryableExtensions;
 using Comment.Core.Data;
 using Comment.Infrastructure.Enums;
+using Comment.Infrastructure.Services.Comment.DTOs.Response;
 using Comment.Infrastructure.Services.Comment.GetCommentsByThread.Request;
 using Comment.Infrastructure.Services.Comment.GetCommentsByThread.Response;
 using MassTransit;

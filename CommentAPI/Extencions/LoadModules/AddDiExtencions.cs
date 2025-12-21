@@ -6,8 +6,12 @@ using Comment.Infrastructure.Services.Auth.Register;
 using Comment.Infrastructure.Services.Comment;
 using Comment.Infrastructure.Services.Comment.CreateComment;
 using Comment.Infrastructure.Services.Comment.CreateComment.Request;
+using Comment.Infrastructure.Services.Comment.DeleteComment;
+using Comment.Infrastructure.Services.Comment.DeleteComment.Request;
 using Comment.Infrastructure.Services.Comment.DTOs.Request;
 using Comment.Infrastructure.Services.Comment.GetCommentsByThread;
+using Comment.Infrastructure.Services.Comment.UpdateComment;
+using Comment.Infrastructure.Services.Comment.UpdateComment.Request;
 using Comment.Infrastructure.Services.Comment.Validators;
 using Comment.Infrastructure.Services.Thread;
 using Comment.Infrastructure.Services.Thread.DTOs.Request;
@@ -50,19 +54,21 @@ namespace CommentAPI.Extencions.LoadModules
             #region Handlers
 
             services.AddScoped<ILoginHandler, LoginHandler>();
+            services.AddScoped<IRegisterHandler, RegisterHandler>();
+            services.AddScoped<ILogoutHandler, LogoutHandler>();
             services.AddScoped<ICreateCommentHandler, CreateCommentHandler>();
             services.AddScoped<IGetCommentsByThreadHandler, GetCommentsByThreadHandler>();
-            services.AddScoped<IRegisterHandler, RegisterHandler>();
-            services.AddScoped<ILoginHandler, LoginHandler>();
-            services.AddScoped<ILogoutHandler, LogoutHandler>();
+            services.AddScoped<IUpdateCommentHandler, UpdateCommentHandler>();
+            services.AddScoped<IDeleteCommentHandler, DeleteCommentHandler>();
 
             #endregion
 
             #region Validators
 
             services.AddScoped<IValidator<CommentCreateRequest>, CommentCreateValidator>();
-            services.AddScoped<IValidator<CommentUpdateDTO>, CommentUpdateValidator>();
+            services.AddScoped<IValidator<CommentUpdateRequest>, CommentUpdateValidator>();
             services.AddScoped<IValidator<CommentFindDTO>, CommentFindValidator>();
+            services.AddScoped<IValidator<DeleteCommentRequestDTO>, CommentDeleteValidator>();
             services.AddScoped<IValidator<ThreadCreateDTO>, ThreadCreateValidator>();
             services.AddScoped<IValidator<ThreadUpdateDTO>, ThreadUpdateValidator>();
             services.AddScoped<IValidator<ThreadFindDTO>, ThreadFindValidator>();

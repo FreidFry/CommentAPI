@@ -6,7 +6,6 @@ using Comment.Infrastructure.Events;
 using Comment.Infrastructure.Services.Comment.CreateComment.Request;
 using Comment.Infrastructure.Services.Comment.CreateComment.Response;
 using Comment.Infrastructure.Utils;
-using FluentValidation;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis.Extensions.Core.Abstractions;
@@ -39,7 +38,7 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
 
             if (thread == null)
             {
-                await context.RespondAsync(new MessageResponse("Thread not found"));
+                await context.RespondAsync(new StatusCodeResponse("Thread not found", 404));
                 return;
             }
 
@@ -48,7 +47,7 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
 
             if (user == null)
             {
-                await context.RespondAsync(new MessageResponse("User not found"));
+                await context.RespondAsync(new StatusCodeResponse("User not found", 404));
                 return;
             }
 
@@ -64,7 +63,7 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
 
                 if (parentComment == null)
                 {
-                    await context.RespondAsync(new MessageResponse("Parent comment not found"));
+                    await context.RespondAsync(new StatusCodeResponse("Parent comment not found", 404));
                     return;
                 }
 

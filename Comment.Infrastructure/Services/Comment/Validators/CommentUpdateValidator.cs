@@ -1,9 +1,9 @@
-using Comment.Infrastructure.Services.Comment.DTOs.Request;
+using Comment.Infrastructure.Services.Comment.UpdateComment.Request;
 using FluentValidation;
 
 namespace Comment.Infrastructure.Services.Comment.Validators
 {
-    public class CommentUpdateValidator : AbstractValidator<CommentUpdateDTO>
+    public class CommentUpdateValidator : AbstractValidator<CommentUpdateRequest>
     {
         public CommentUpdateValidator()
         {

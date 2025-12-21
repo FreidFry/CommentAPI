@@ -56,14 +56,14 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
                 request.FormFile?.ContentType
             );
 
-            var response = await _client.GetResponse<CreateCommentSuccesResponse, MessageResponse>(dto, cancellationToken);
+            var response = await _client.GetResponse<CreateCommentSuccesResponse, StatusCodeResponse>(dto, cancellationToken);
 
             if (response.Is(out Response<CreateCommentSuccesResponse> success))
             {
                 return new OkResult();
             }
 
-            if (response.Is(out Response<MessageResponse> error))
+            if (response.Is(out Response<StatusCodeResponse> error))
             {
                 return new BadRequestObjectResult(error.Message);
             }

@@ -1,6 +1,6 @@
 using AutoMapper;
 using Comment.Core.Persistence;
-using Comment.Infrastructure.Services.Comment.GetCommentsByThread.Response;
+using Comment.Infrastructure.Services.Comment.DTOs.Response;
 
 namespace Comment.Infrastructure.Maps
 {

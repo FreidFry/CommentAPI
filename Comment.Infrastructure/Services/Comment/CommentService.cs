@@ -6,7 +6,8 @@ using Comment.Core.Persistence;
 using Comment.Infrastructure.Enums;
 using Comment.Infrastructure.Services.Comment.CreateComment.Request;
 using Comment.Infrastructure.Services.Comment.DTOs.Request;
-using Comment.Infrastructure.Services.Comment.GetCommentsByThread.Response;
+using Comment.Infrastructure.Services.Comment.DTOs.Response;
+using Comment.Infrastructure.Services.Comment.UpdateComment.Request;
 using Comment.Infrastructure.Utils;
 using FluentValidation;
 using Microsoft.AspNetCore.Http;
@@ -21,7 +22,7 @@ namespace Comment.Infrastructure.Services.Comment
         private readonly AppDbContext _appDbContext;
         private readonly IMapper _mapper;
         //private readonly IValidator<CommentCreateRequest> _createValidator;
-        private readonly IValidator<CommentUpdateDTO> _updateValidator;
+        private readonly IValidator<CommentUpdateRequest> _updateValidator;
         private readonly IValidator<CommentFindDTO> _findValidator;
         private readonly IImageTransform _imageTransform;
         private readonly IHtmlSanitize _htmlSanitizer;
@@ -31,7 +32,7 @@ namespace Comment.Infrastructure.Services.Comment
             AppDbContext appDbContext,
             IMapper mapper,
             //IValidator<CommentCreateRequest> createValidator,
-            IValidator<CommentUpdateDTO> updateValidator,
+            IValidator<CommentUpdateRequest> updateValidator,
             IValidator<CommentFindDTO> findValidator,
             IImageTransform imageTransform,
             IHtmlSanitize htmlSanitizer,
@@ -143,63 +144,7 @@ namespace Comment.Infrastructure.Services.Comment
             return new OkObjectResult(comment);
         }
 
-        public async Task<IActionResult> CreateAsync([FromForm] CommentCreateRequest dto, HttpContext httpContext, CancellationToken cancellationToken)
-        {
-
-            var callerId = GetCallerId(httpContext);
-            if (callerId == null)
-                return new UnauthorizedResult();
-
-            var user = await _appDbContext.Users.FindAsync(new object[] { callerId }, cancellationToken);
-            if (user == null || user.IsDeleted || user.IsBanned)
-                return new NotFoundObjectResult("User not found or banned");
-
-            var thread = await _appDbContext.Threads
-                .FirstOrDefaultAsync(t => t.Id == dto.ThreadId && !t.IsDeleted, cancellationToken);
-
-            if (thread == null)
-                return new NotFoundObjectResult("Thread not found");
-            var comment = new CommentModel(_htmlSanitizer.Sanitize(dto.Content), user, thread);
-            if (dto.ParentCommentId.HasValue)
-            {
-                var parentComment = await _appDbContext.Comments
-                    .FirstOrDefaultAsync(c => c.Id == dto.ParentCommentId.Value &&
-                                             c.ThreadId == dto.ThreadId &&
-                                             !c.IsDeleted, cancellationToken);
-
-                if (parentComment == null)
-                    return new BadRequestObjectResult("Parent comment not found or belongs to different thread");
-
-                comment.AddParent(parentComment);
-            }
-            //switch (dto.FormFile?.ContentType)
-            //{
-            //    case "image/jpeg":
-            //    case "image/png":
-            //        (string imageUrl, string tumbnailUrl) = await _imageTransform.ProcessAndUploadImageAsync(dto.FormFile, cancellationToken);
-            //        comment.SetImageUrls(imageUrl, tumbnailUrl);
-            //        break;
-            //    case "image/gif":
-            //        (string gifUrl, string tumbnailGif) = await _imageTransform.ProcessAndUploadGifAsync(dto.FormFile, cancellationToken);
-            //        comment.SetImageUrls(gifUrl, tumbnailGif);
-            //        break;
-            //    case "text/plain":
-            //        if (dto.FormFile.Length > 100 * 1024) // 100 KB
-            //            return new BadRequestObjectResult("Text file size exceeds the limit of 100 KB");
-            //        var fileUrl = await _fileProvider.SaveFileAsync(dto.FormFile, cancellationToken);
-            //        comment.SetFileUrl(fileUrl);
-            //        break;
-            //    default:
-            //        break;
-            //}
-
-            await _appDbContext.Comments.AddAsync(comment, cancellationToken);
-            await _appDbContext.SaveChangesAsync(cancellationToken);
-
-            return new OkResult();
-        }
-
-        public async Task<IActionResult> UpdateAsync(CommentUpdateDTO dto, HttpContext httpContext, CancellationToken cancellationToken)
+        public async Task<IActionResult> UpdateAsync(CommentUpdateRequest dto, HttpContext httpContext, CancellationToken cancellationToken)
         {
             var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
@@ -266,6 +211,11 @@ namespace Comment.Infrastructure.Services.Comment
             await _appDbContext.SaveChangesAsync(cancellationToken);
 
             return new NoContentResult();
+        }
+
+        public Task<IActionResult> CreateAsync(CommentCreateRequest dto, HttpContext httpContext, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -19,9 +19,7 @@ namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread
             var response = await _client.GetResponse<CommentsByThreadRequestDTO, CommentsListResponse>(dto, cancellationToken);
 
             if (response.Is(out Response<CommentsListResponse> comments))
-            {
                 return new OkObjectResult(comments.Message);
-            }
 
             return new StatusCodeResult(500);
         }

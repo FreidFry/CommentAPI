@@ -1,4 +1,6 @@
-﻿namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread.Response
+﻿using Comment.Infrastructure.Services.Comment.DTOs.Response;
+
+namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread.Response
 {
     public record CommentsListResponse
     {

@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Services\Comment\UpdateComment\Response\" />
     <Folder Include="Services\Thread\Validators\" />
   </ItemGroup>
 
