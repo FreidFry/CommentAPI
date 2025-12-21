@@ -1,6 +1,6 @@
 using AutoMapper;
 using Comment.Core.Persistence;
-using Comment.Infrastructure.Services.Comment.DTOs.Response;
+using Comment.Infrastructure.Services.Comment.GetCommentsByThread.Response;
 
 namespace Comment.Infrastructure.Maps
 {
@@ -8,7 +8,7 @@ namespace Comment.Infrastructure.Maps
     {
         public CommentMapProfile()
         {
-            CreateMap<CommentModel, CommentResponseDTO>()
+            CreateMap<CommentModel, CommentViewModel>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.Content))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))

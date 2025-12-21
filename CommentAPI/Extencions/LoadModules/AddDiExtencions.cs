@@ -3,8 +3,13 @@ using Comment.Core.Interfaces;
 using Comment.Infrastructure.Services;
 using Comment.Infrastructure.Services.Auth;
 using Comment.Infrastructure.Services.Auth.Login;
+using Comment.Infrastructure.Services.Auth.Logout;
+using Comment.Infrastructure.Services.Auth.Register;
 using Comment.Infrastructure.Services.Comment;
+using Comment.Infrastructure.Services.Comment.CreateComment;
+using Comment.Infrastructure.Services.Comment.CreateComment.Request;
 using Comment.Infrastructure.Services.Comment.DTOs.Request;
+using Comment.Infrastructure.Services.Comment.GetCommentsByThread;
 using Comment.Infrastructure.Services.Comment.Validators;
 using Comment.Infrastructure.Services.Thread;
 using Comment.Infrastructure.Services.Thread.DTOs.Request;
@@ -12,7 +17,6 @@ using Comment.Infrastructure.Services.Thread.Validators;
 using Comment.Infrastructure.Services.User;
 using Comment.Infrastructure.Services.User.DTOs.Request;
 using Comment.Infrastructure.Services.User.Validators;
-using Comment.Infrastructure.Storages;
 using Comment.Infrastructure.Utils;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
@@ -23,7 +27,6 @@ namespace CommentAPI.Extencions.LoadModules
     {
         public static void AddDipedencyInjections(this IServiceCollection services)
         {
-            services.AddSingleton<ITokenStorage, TokenStorage>();
             services.AddSingleton<IJwtOptions>(sp =>
             {
                 var jwtOptions = sp.GetRequiredService<IConfiguration>();
@@ -37,7 +40,6 @@ namespace CommentAPI.Extencions.LoadModules
 
             #region Services
 
-            services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ICommentService, CommentService>();
             services.AddScoped<IThreadService, ThreadService>();
@@ -48,13 +50,18 @@ namespace CommentAPI.Extencions.LoadModules
 
             #region Handlers
 
-            services.AddScoped<IAuthHandler, AuthHandler>();
+            services.AddScoped<ILoginHandler, LoginHandler>();
+            services.AddScoped<ICreateCommentHandler, CreateCommentHandler>();
+            services.AddScoped<IGetCommentsByThreadHandler, GetCommentsByThreadHandler>();
+            services.AddScoped<IRegisterHandler, RegisterHandler>();
+            services.AddScoped<ILoginHandler, LoginHandler>();
+            services.AddScoped<ILogoutHandler, LogoutHandler>();
 
             #endregion
 
             #region Validators
 
-            services.AddScoped<IValidator<CommentCreateDTO>, CommentCreateValidator>();
+            services.AddScoped<IValidator<CommentCreateRequestDTO>, CommentCreateValidator>();
             services.AddScoped<IValidator<CommentUpdateDTO>, CommentUpdateValidator>();
             services.AddScoped<IValidator<CommentFindDTO>, CommentFindValidator>();
             services.AddScoped<IValidator<ThreadCreateDTO>, ThreadCreateValidator>();

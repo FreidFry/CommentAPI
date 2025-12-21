@@ -1,5 +1,8 @@
 using Comment.Infrastructure.Services.Comment;
+using Comment.Infrastructure.Services.Comment.CreateComment;
+using Comment.Infrastructure.Services.Comment.CreateComment.Request;
 using Comment.Infrastructure.Services.Comment.DTOs.Request;
+using Comment.Infrastructure.Services.Comment.GetCommentsByThread;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -11,10 +14,13 @@ namespace CommentAPI.Controllers
     public class CommentController : ControllerBase
     {
         private readonly ICommentService _commentService;
+        private readonly ICreateCommentHandler _createCommentHandler;
 
-        public CommentController(ICommentService commentService)
+
+        public CommentController(ICommentService commentService, ICreateCommentHandler createCommentHandler)
         {
             _commentService = commentService;
+            _createCommentHandler = createCommentHandler;
         }
 
         [HttpGet]
@@ -28,9 +34,9 @@ namespace CommentAPI.Controllers
         [HttpPost]
         [Authorize]
         [SwaggerOperation(Summary = "Create a new comment", Description = "Creates a new comment with the provided details.")]
-        public async Task<IActionResult> Create([FromForm] CommentCreateDTO dto, CancellationToken cancellationToken)
+        public async Task<IActionResult> Create([FromForm] CommentCreateRequest dto, CancellationToken cancellationToken)
         {
-            return await _commentService.CreateAsync(dto, HttpContext, cancellationToken);
+            return await _createCommentHandler.CreateCommentHandleAsync(dto, HttpContext, cancellationToken);
         }
 
         [HttpPut("{id}")]

@@ -1,12 +1,14 @@
-using Comment.Infrastructure.Services.Comment.DTOs.Request;
+using Comment.Infrastructure.Services.Comment.CreateComment.Request;
 using FluentValidation;
 
 namespace Comment.Infrastructure.Services.Comment.Validators
 {
-    public class CommentCreateValidator : AbstractValidator<CommentCreateDTO>
+    public class CommentCreateValidator : AbstractValidator<CommentCreateRequestDTO>
     {
         public CommentCreateValidator()
         {
+            RuleFor(x => x.CallerId)
+                .NotEmpty();
             RuleFor(x => x.Content)
                 .NotEmpty()
                 .WithMessage("Content is required.")

@@ -1,5 +1,7 @@
 using Comment.Infrastructure.Services.Comment;
 using Comment.Infrastructure.Services.Comment.DTOs.Request;
+using Comment.Infrastructure.Services.Comment.GetCommentsByThread;
+using Comment.Infrastructure.Services.Comment.GetCommentsByThread.Request;
 using Comment.Infrastructure.Services.Thread;
 using Comment.Infrastructure.Services.Thread.DTOs.Request;
 using Microsoft.AspNetCore.Authorization;
@@ -14,11 +16,14 @@ namespace CommentAPI.Controllers
     {
         private readonly IThreadService _threadService;
         private readonly ICommentService _commentService;
+        private readonly IGetCommentsByThreadHandler _getCommentsByThreadHandler;
 
-        public ThreadController(IThreadService threadService, ICommentService commentService)
+
+        public ThreadController(IThreadService threadService, ICommentService commentService, IGetCommentsByThreadHandler getCommentsByThreadHandler)
         {
             _threadService = threadService;
             _commentService = commentService;
+            _getCommentsByThreadHandler = getCommentsByThreadHandler;
         }
 
         [HttpGet]
@@ -84,9 +89,9 @@ namespace CommentAPI.Controllers
             Summary = "Get Comments by Thread",
             Description = "Retrieve comments associated with a specific thread."
         )]
-        public async Task<IActionResult> GetByThread([FromRoute] Guid threadId, [FromQuery] CommentsByThreadDTO dto, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetByThread([FromRoute] Guid threadId, [FromQuery] CommentsByThreadRequest dto, CancellationToken cancellationToken)
         {
-            return await _commentService.GetByThreadAsync(threadId, dto, cancellationToken);
+            return await _getCommentsByThreadHandler.GetCommentsByThreadHandle(threadId, dto, cancellationToken);
         }
 
         [HttpPut]

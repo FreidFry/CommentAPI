@@ -4,8 +4,9 @@ using Comment.Core.Data;
 using Comment.Core.Interfaces;
 using Comment.Core.Persistence;
 using Comment.Infrastructure.Enums;
+using Comment.Infrastructure.Services.Comment.CreateComment.Request;
 using Comment.Infrastructure.Services.Comment.DTOs.Request;
-using Comment.Infrastructure.Services.Comment.DTOs.Response;
+using Comment.Infrastructure.Services.Comment.GetCommentsByThread.Response;
 using Comment.Infrastructure.Utils;
 using FluentValidation;
 using Microsoft.AspNetCore.Http;
@@ -19,7 +20,7 @@ namespace Comment.Infrastructure.Services.Comment
     {
         private readonly AppDbContext _appDbContext;
         private readonly IMapper _mapper;
-        private readonly IValidator<CommentCreateDTO> _createValidator;
+        //private readonly IValidator<CommentCreateRequest> _createValidator;
         private readonly IValidator<CommentUpdateDTO> _updateValidator;
         private readonly IValidator<CommentFindDTO> _findValidator;
         private readonly IImageTransform _imageTransform;
@@ -29,7 +30,7 @@ namespace Comment.Infrastructure.Services.Comment
         public CommentService(
             AppDbContext appDbContext,
             IMapper mapper,
-            IValidator<CommentCreateDTO> createValidator,
+            //IValidator<CommentCreateRequest> createValidator,
             IValidator<CommentUpdateDTO> updateValidator,
             IValidator<CommentFindDTO> findValidator,
             IImageTransform imageTransform,
@@ -39,7 +40,7 @@ namespace Comment.Infrastructure.Services.Comment
         {
             _appDbContext = appDbContext;
             _mapper = mapper;
-            _createValidator = createValidator;
+            //_createValidator = createValidator;
             _updateValidator = updateValidator;
             _findValidator = findValidator;
             _imageTransform = imageTransform;
@@ -94,7 +95,7 @@ namespace Comment.Infrastructure.Services.Comment
 
             var comments = await rootList
                 .Take(dto.Limit+1)
-                .ProjectTo<CommentResponseDTO>(_mapper.ConfigurationProvider)
+                .ProjectTo<CommentViewModel>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
 
             bool HasMore = false;
@@ -134,7 +135,7 @@ namespace Comment.Infrastructure.Services.Comment
             var comment = await query
                 .Where(c => c.Id == dto.CommentId)
                 .OrderByDescending(c => c.CreatedAt)
-                .ProjectTo<CommentResponseDTO>(_mapper.ConfigurationProvider)
+                .ProjectTo<CommentViewModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (comment == null)
@@ -142,11 +143,11 @@ namespace Comment.Infrastructure.Services.Comment
             return new OkObjectResult(comment);
         }
 
-        public async Task<IActionResult> CreateAsync([FromForm] CommentCreateDTO dto, HttpContext httpContext, CancellationToken cancellationToken)
+        public async Task<IActionResult> CreateAsync([FromForm] CommentCreateRequest dto, HttpContext httpContext, CancellationToken cancellationToken)
         {
-            var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
-            if (!validationResult.IsValid)
-                return new BadRequestObjectResult(validationResult.Errors);
+            //var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
+            //if (!validationResult.IsValid)
+            //    return new BadRequestObjectResult(validationResult.Errors);
 
             var callerId = GetCallerId(httpContext);
             if (callerId == null)
@@ -227,7 +228,7 @@ namespace Comment.Infrastructure.Services.Comment
             var commentDto = await _appDbContext.Comments
                 .Where(c => c.Id == comment.Id)
                 .Include(c => c.User)
-                .Select(c => new CommentResponseDTO
+                .Select(c => new CommentViewModel
                 {
                     Id = c.Id,
                     Content = c.Content,

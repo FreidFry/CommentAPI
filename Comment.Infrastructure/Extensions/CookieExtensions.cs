@@ -1,55 +1,21 @@
 ﻿using Comment.Core.Interfaces;
 using Comment.Core.Persistence;
-using Comment.Infrastructure.Services.Auth.DTOs;
-using Comment.Infrastructure.Services.Auth.Login.Response;
-using MassTransit;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 
-namespace Comment.Infrastructure.Services.Auth.Login
+namespace Comment.Infrastructure.Extensions
 {
-    public class AuthHandler : IAuthHandler
+    public static class CookieExtensions
     {
-        private readonly IJwtProvider _jwtProvider;
-        private readonly IJwtOptions _jwtOptions;
-        private readonly IRequestClient<UserLoginRequest> _client;
-        public AuthHandler(IRequestClient<UserLoginRequest> client, IJwtOptions jwtOptions, IJwtProvider jwtProvider)
-        {
-            _client = client;
-            _jwtProvider = jwtProvider;
-            _jwtOptions = jwtOptions;
-        }
-
-        public async Task<IActionResult> HandleLoginAsync(UserLoginRequest request, HttpContext httpContext, CancellationToken cancellationToken)
-        {
-            var response = await _client.GetResponse<LoginResponse, NotFoundResult, UnauthorizedResult>(request);
-
-            if (response.Is(out Response<LoginResponse> succes))
-            {
-                var data = succes.Message;
-
-                SetJwtCookie(httpContext, data.UserModel);
-
-                return new OkObjectResult(new { data.Id, data.UserName, data.Roles });
-            }
-
-            if (response.Is(out Response<LoginNotFound> notFount)) return new NotFoundResult();
-            if (response.Is(out Response<LoginUnauthorized> notUnauthorized)) return new UnauthorizedResult();
-
-            return new StatusCodeResult(500);
-        }
-
-        void SetJwtCookie(HttpContext http, UserModel user)
+        public static void SetJwtCookie(HttpContext http, UserModel user, IJwtProvider _jwtProvider, IJwtOptions _jwtOptions)
         {
             var token = _jwtProvider.GenerateToken(user);
             var expiration = DateTimeOffset.UtcNow.AddDays(_jwtOptions.ExpiresDays);
 
             AppendSecureCookie(http, "jwt", token, expiration);
             SetPartitionedCookie(http);
-
         }
 
-        private void AppendCookie(HttpContext http, string[] cookieArray)
+        public static void AppendCookie(HttpContext http, string[] cookieArray)
         {
             if (cookieArray.Length == 0) return;
 
@@ -73,7 +39,7 @@ namespace Comment.Infrastructure.Services.Auth.Login
 
         }
 
-        void AppendSecureCookie(HttpContext http, string id, string value, DateTimeOffset? expiration)
+        public static void AppendSecureCookie(HttpContext http, string id, string value, DateTimeOffset? expiration)
         {
             http.Response.Cookies.Append(id, value, new CookieOptions
             {
@@ -84,7 +50,7 @@ namespace Comment.Infrastructure.Services.Auth.Login
                 Expires = expiration
             });
         }
-        private void SetPartitionedCookie(HttpContext http)
+        private static void SetPartitionedCookie(HttpContext http)
         {
             var setCookieHeader = http.Response.Headers["Set-Cookie"];
             if (!string.IsNullOrEmpty(setCookieHeader))

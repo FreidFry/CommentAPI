@@ -1,6 +1,6 @@
-namespace Comment.Infrastructure.Services.Comment.DTOs.Response
+namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread.Response
 {
-    public class CommentResponseDTO
+    public class CommentViewModel
     {
         public Guid Id { get; set; }
         public string UserName { get; set; } = string.Empty;
@@ -15,7 +15,7 @@ namespace Comment.Infrastructure.Services.Comment.DTOs.Response
         public string? ImageTumbnailUrl { get; set; }
         public string? ImageUrl { get; set; }
         public string? FileUrl { get; set; }
-        public List<CommentResponseDTO> Replies { get; set; } = [];
+        public List<CommentViewModel> Replies { get; set; } = [];
         public int ComentCount { get; set; }
     }
 

@@ -12,8 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Services\Auth\Login\Request\" />
-    <Folder Include="Services\Auth\Validators\" />
     <Folder Include="Services\Thread\Validators\" />
   </ItemGroup>
 

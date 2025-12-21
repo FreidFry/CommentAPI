@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Comment.Infrastructure.Services.Auth.Login
 {
-    public interface IAuthHandler
+    public interface ILoginHandler
     {
         Task<IActionResult> HandleLoginAsync(UserLoginRequest request, HttpContext httpContext, CancellationToken cancellationToken);
     }

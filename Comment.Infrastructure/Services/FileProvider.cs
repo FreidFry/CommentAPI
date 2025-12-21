@@ -5,7 +5,7 @@ using Amazon.S3.Transfer;
 using Comment.Core.Interfaces;
 using Microsoft.AspNetCore.Http;
 
-namespace Comment.Infrastructure.Storages
+namespace Comment.Infrastructure.Services
 {
     public class FileProvider : IFileProvider
     {

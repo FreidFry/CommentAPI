@@ -20,11 +20,11 @@ namespace Comment.Infrastructure.Services.Auth.Login
         public async Task Consume(ConsumeContext<UserLoginRequest> context)
         {
             var user = await _appDbContext.Users
-                .FirstOrDefaultAsync(u => u.Email == context.Message.Email);
+                .FirstOrDefaultAsync(u => u.Email == context.Message.Email, context.CancellationToken);
 
             if (user == null)
             {
-                await context.RespondAsync(new LoginNotFound());
+                await context.RespondAsync(new LoginNotFound("User not registered."));
                 return;
             }
             if (!_passwordHasher.VerifyPassword(context.Message.Password, user.HashPassword))
@@ -34,9 +34,9 @@ namespace Comment.Infrastructure.Services.Auth.Login
             }
 
             _appDbContext.Users.Update(user);
-            await _appDbContext.SaveChangesAsync();
+            await _appDbContext.SaveChangesAsync(context.CancellationToken);
 
-            await context.RespondAsync(new LoginResponse(user.Id, user.UserName, user.Roles.ToList(), user));
+            await context.RespondAsync(new LoginSuccesResponse(user.Id, user.UserName, user.Roles.ToList(), user));
         }
     }
 }
