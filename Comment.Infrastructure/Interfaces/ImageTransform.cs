@@ -5,7 +5,7 @@ using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Processing.Processors.Quantization;
 
-namespace Comment.Infrastructure.Utils
+namespace Comment.Infrastructure.Interfaces
 {
     public class ImageTransform : IImageTransform
     {

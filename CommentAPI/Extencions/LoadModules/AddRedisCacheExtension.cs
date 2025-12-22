@@ -41,6 +41,12 @@ namespace CommentAPI.Extencions.LoadModules
             {
                 ConnectionString = connectionString
             });
+
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = connectionString;
+                options.InstanceName = apiOptions.RedisCapchaInstanceName;
+            });
             return services;
         }
 

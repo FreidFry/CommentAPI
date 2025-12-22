@@ -20,6 +20,7 @@ namespace CommentAPI.Extencions.LoadModules
         public string RedisConnect { get; }
 
         public string RedisDataInstanceName { get; }
+        public string RedisCapchaInstanceName { get; }
 
         #region S3
 
@@ -55,6 +56,7 @@ namespace CommentAPI.Extencions.LoadModules
             RabbitMqConnect = config["RabbitMq:ConnectString"] ?? throw new ArgumentNullException("RabbitMq__ConnectString");
             RedisConnect = config["Redis:ConnectString"] ?? throw new ArgumentNullException("Redis__ConnectString");
             RedisDataInstanceName = config["Redis:DataInstanceName"] ?? throw new ArgumentNullException("Redis__DataInstanceName");
+            RedisCapchaInstanceName = config["Redis:CapchaInstanceName"] ?? throw new ArgumentNullException("Redis__CapchaInstanceName");
 
             DbConnection = $"Server={DbServer};Port={DbPort};Database={DbName};Username={DbUser};Password={DbPassword}";
 

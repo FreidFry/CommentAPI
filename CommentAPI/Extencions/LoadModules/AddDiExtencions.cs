@@ -1,8 +1,11 @@
 ﻿using Comment.Core.Interfaces;
+using Comment.Infrastructure.Interfaces;
 using Comment.Infrastructure.Services;
 using Comment.Infrastructure.Services.Auth.Login;
 using Comment.Infrastructure.Services.Auth.Logout;
 using Comment.Infrastructure.Services.Auth.Register;
+using Comment.Infrastructure.Services.Capcha.CapchaGenerate;
+using Comment.Infrastructure.Services.Capcha.Validate;
 using Comment.Infrastructure.Services.Comment.CreateComment;
 using Comment.Infrastructure.Services.Comment.CreateComment.Request;
 using Comment.Infrastructure.Services.Comment.DeleteComment;
@@ -43,6 +46,8 @@ namespace CommentAPI.Extencions.LoadModules
                 var apiOptions = sp.GetRequiredService<IConfiguration>();
                 return new ApiOptions(apiOptions);
             });
+            services.AddSingleton<ICaptchaConfig, CaptchaConfig>();
+
 
             #region Services
 
@@ -71,6 +76,9 @@ namespace CommentAPI.Extencions.LoadModules
             services.AddScoped<IGetThreadTreeHandler, GetThreadTreeHandler>();
 
             services.AddScoped<IGetProfileHandler, GetProfileHandler>();
+
+            services.AddScoped<ICapchaGenerateHandler, CapchaGenerateHandler>();
+            services.AddScoped<ICaptchaValidateHandler,  CaptchaValidateHandler>();
 
             #endregion
 

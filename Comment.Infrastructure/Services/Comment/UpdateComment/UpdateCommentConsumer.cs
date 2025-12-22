@@ -1,8 +1,8 @@
 ﻿using Comment.Core.Data;
 using Comment.Infrastructure.CommonDTOs;
+using Comment.Infrastructure.Interfaces;
 using Comment.Infrastructure.Services.Comment.DTOs.Request;
 using Comment.Infrastructure.Services.Comment.DTOs.Response;
-using Comment.Infrastructure.Utils;
 using FluentValidation;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;

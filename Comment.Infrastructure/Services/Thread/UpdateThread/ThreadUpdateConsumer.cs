@@ -2,10 +2,10 @@
 using AutoMapper.QueryableExtensions;
 using Comment.Core.Data;
 using Comment.Infrastructure.CommonDTOs;
+using Comment.Infrastructure.Interfaces;
 using Comment.Infrastructure.Services.Thread.GetDetailedThread.Response;
 using Comment.Infrastructure.Services.Thread.UpdateThread.Request;
 using Comment.Infrastructure.Services.Thread.UpdateThread.Response;
-using Comment.Infrastructure.Utils;
 using FluentValidation;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;

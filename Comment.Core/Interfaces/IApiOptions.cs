@@ -16,5 +16,6 @@
         string RabbitMqConnect { get; }
         string RedisConnect { get; }
         string RedisDataInstanceName { get; }
+        string RedisCapchaInstanceName { get; }
     }
 }

@@ -1,6 +1,3 @@
-using MassTransit;
-using Microsoft.AspNetCore.Http;
-
 namespace Comment.Infrastructure.Services.Comment.CreateComment.Request
 {
     public record CommentCreateRequestDTO

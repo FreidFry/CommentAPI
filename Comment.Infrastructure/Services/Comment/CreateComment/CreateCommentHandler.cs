@@ -1,9 +1,9 @@
 ﻿using Comment.Infrastructure.CommonDTOs;
+using Comment.Infrastructure.Services.Capcha.Validate;
 using Comment.Infrastructure.Services.Comment.CreateComment.Request;
 using Comment.Infrastructure.Services.Comment.CreateComment.Response;
 using FluentValidation;
 using MassTransit;
-using MassTransit.MessageData.Values;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using StackExchange.Redis.Extensions.Core.Abstractions;
@@ -16,15 +16,20 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
         private readonly IRequestClient<CommentCreateRequestDTO> _client;
         private readonly IRedisDatabase _redisDatabase;
         private readonly IValidator<CommentCreateRequest> _validator;
-        public CreateCommentHandler(IRequestClient<CommentCreateRequestDTO> client, IRedisDatabase redisDatabase, IValidator<CommentCreateRequest> validator)
+        private readonly ICaptchaValidateHandler _captchaValidateHandler;
+        public CreateCommentHandler(IRequestClient<CommentCreateRequestDTO> client, IRedisDatabase redisDatabase, IValidator<CommentCreateRequest> validator, ICaptchaValidateHandler captchaValidateHandler)
         {
             _client = client;
             _redisDatabase = redisDatabase;
             _validator = validator;
+            _captchaValidateHandler = captchaValidateHandler;
         }
 
         public async Task<IActionResult> Handle(CommentCreateRequest request, HttpContext httpContext, CancellationToken cancellationToken)
         {
+            var CaptchaResponse = await _captchaValidateHandler.Handle(new(request.CaptchaId, request.CaptchaValue));
+            if (!CaptchaResponse) return new BadRequestObjectResult("Captcha is not valid");
+
             var validationResult = await _validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
                 return new BadRequestObjectResult(validationResult.Errors);

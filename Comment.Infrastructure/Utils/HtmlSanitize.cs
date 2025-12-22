@@ -1,4 +1,5 @@
-﻿using Ganss.Xss;
+﻿using Comment.Infrastructure.Interfaces;
+using Ganss.Xss;
 
 namespace Comment.Infrastructure.Utils
 {

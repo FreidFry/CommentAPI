@@ -1,4 +1,4 @@
-﻿namespace Comment.Infrastructure.Utils
+﻿namespace Comment.Infrastructure.Interfaces
 {
     public interface IHtmlSanitize
     {
