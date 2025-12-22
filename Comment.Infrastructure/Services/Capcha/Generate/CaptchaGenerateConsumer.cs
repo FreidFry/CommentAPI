@@ -82,7 +82,7 @@ namespace Comment.Infrastructure.Services.Capcha.CapchaGenerate
             using var ms = new MemoryStream();
             await image.SaveAsPngAsync(ms);
 
-            await context.RespondAsync(new CaptchaGenerateResponse(id, Convert.ToBase64String(ms.ToArray())));
+            await context.RespondAsync(new CaptchaGenerateResponse(id, $"data:image/png;base64,{Convert.ToBase64String(ms.ToArray())}"));
         }
 
         private string GenerateRandomCode(int length)

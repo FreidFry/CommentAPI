@@ -1,5 +1,4 @@
 ﻿using Comment.Infrastructure.Services.Capcha.CapchaGenerate;
-using Comment.Infrastructure.Services.Capcha.Validate;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CommentAPI.Controllers
@@ -9,13 +8,11 @@ namespace CommentAPI.Controllers
     public class CaptchaController : ControllerBase
     {
         private readonly ICapchaGenerateHandler _capchaGenerateHandler;
-        private readonly ICaptchaValidateHandler _validateCaptchaHandler;
 
 
-        public CaptchaController(ICapchaGenerateHandler capchaGenerateHandler, ICaptchaValidateHandler validateCaptchaHandler)
+        public CaptchaController(ICapchaGenerateHandler capchaGenerateHandler)
         {
             _capchaGenerateHandler = capchaGenerateHandler;
-            _validateCaptchaHandler = validateCaptchaHandler;
         }
 
         [HttpGet("generate")]
