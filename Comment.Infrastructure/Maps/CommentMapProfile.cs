@@ -22,7 +22,7 @@ namespace Comment.Infrastructure.Maps
                 .ForMember(dest => dest.ImageTumbnailUrl, opt => opt.MapFrom(src => src.ImageTumbnailUrl))
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.ImageUrl))
                 .ForMember(dest => dest.FileUrl, opt => opt.MapFrom(src => src.FileUrl))
-                .ForMember(dest => dest.ComentCount, opt => opt.MapFrom(src => src.Replyes.Count(c => !c.IsBaned && !c.IsDeleted)));
+                .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.Replyes.Count(c => !c.IsBaned && !c.IsDeleted)));
 
         }
     }

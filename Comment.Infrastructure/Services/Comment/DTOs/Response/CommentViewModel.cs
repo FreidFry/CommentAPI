@@ -16,7 +16,7 @@ namespace Comment.Infrastructure.Services.Comment.DTOs.Response
         public string? ImageUrl { get; set; }
         public string? FileUrl { get; set; }
         public List<CommentViewModel> Replies { get; set; } = [];
-        public int ComentCount { get; set; }
+        public int CommentCount { get; set; }
     }
 
 }

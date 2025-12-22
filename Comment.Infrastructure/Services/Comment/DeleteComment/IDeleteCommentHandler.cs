@@ -6,6 +6,6 @@ namespace Comment.Infrastructure.Services.Comment.DeleteComment
 {
     public interface IDeleteCommentHandler
     {
-        Task<IActionResult> DeleteCommentHandle(DeleteCommentRequest request, HttpContext http, CancellationToken cancellationToken);
+        Task<IActionResult> Handle(DeleteCommentRequest request, HttpContext http, CancellationToken cancellationToken);
     }
 }

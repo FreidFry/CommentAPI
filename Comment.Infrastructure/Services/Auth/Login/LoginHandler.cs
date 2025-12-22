@@ -1,4 +1,5 @@
 ﻿using Comment.Core.Interfaces;
+using Comment.Infrastructure.CommonDTOs;
 using Comment.Infrastructure.Services.Auth.DTOs;
 using Comment.Infrastructure.Services.Auth.Login.Response;
 using MassTransit;
@@ -20,9 +21,9 @@ namespace Comment.Infrastructure.Services.Auth.Login
             _jwtOptions = jwtOptions;
         }
 
-        public async Task<IActionResult> HandleLoginAsync(UserLoginRequest request, HttpContext httpContext, CancellationToken cancellationToken)
+        public async Task<IActionResult> Handle(UserLoginRequest request, HttpContext httpContext, CancellationToken cancellationToken)
         {
-            var response = await _client.GetResponse<LoginSuccesResponse, NotFoundResult, UnauthorizedResult>(request, cancellationToken);
+            var response = await _client.GetResponse<LoginSuccesResponse, StatusCodeResponse>(request, cancellationToken);
 
             if (response.Is(out Response<LoginSuccesResponse> succes))
             {
@@ -33,8 +34,7 @@ namespace Comment.Infrastructure.Services.Auth.Login
                 return new OkObjectResult(new { data.Id, data.UserName, data.Roles });
             }
 
-            if (response.Is(out Response<LoginNotFound> notFount)) return new NotFoundObjectResult(notFount.Message.msg);
-            if (response.Is(out Response<LoginUnauthorized> notUnauthorized)) return new UnauthorizedResult();
+            if (response.Is(out Response<StatusCodeResponse> statusCode)) return new StatusCodeResult(statusCode.Message.StatusCode);
 
             return new StatusCodeResult(500);
         }

@@ -6,6 +6,6 @@ namespace Comment.Infrastructure.Services.Auth.Login
 {
     public interface ILoginHandler
     {
-        Task<IActionResult> HandleLoginAsync(UserLoginRequest request, HttpContext httpContext, CancellationToken cancellationToken);
+        Task<IActionResult> Handle(UserLoginRequest request, HttpContext httpContext, CancellationToken cancellationToken);
     }
 }

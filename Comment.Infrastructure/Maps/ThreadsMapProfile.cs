@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Comment.Core.Persistence;
-using Comment.Infrastructure.Services.Thread.DTOs.Response;
+using Comment.Infrastructure.Services.Thread.DTOs;
+using Comment.Infrastructure.Services.Thread.GetDetailedThread.Response;
 
 namespace Comment.Infrastructure.Maps
 {
@@ -8,7 +9,7 @@ namespace Comment.Infrastructure.Maps
     {
         public ThreadsMapProfile()
         {
-            CreateMap<ThreadModel, ThreadsThreeResponse>()
+            CreateMap<ThreadModel, ThreadsResponseViewModel>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))
                 .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.Context.Length > 300 ? $"{src.Context.Substring(0, 297)}..." : src.Context))

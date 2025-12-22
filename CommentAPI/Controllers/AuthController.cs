@@ -1,4 +1,3 @@
-using Comment.Infrastructure.Services.Auth;
 using Comment.Infrastructure.Services.Auth.DTOs;
 using Comment.Infrastructure.Services.Auth.Login;
 using Comment.Infrastructure.Services.Auth.Logout;
@@ -31,7 +30,7 @@ namespace CommentAPI.Controllers
         [SwaggerResponse(200, "User registered successfully")]
         public async Task<IActionResult> Register([FromBody] UserRegisterRequest dto, CancellationToken cancellationToken)
         {
-            return await _registerHandler.RegisterHandleAsync(dto, HttpContext, cancellationToken);
+            return await _registerHandler.Handle(dto, HttpContext, cancellationToken);
         }
 
         [HttpPost("login")]
@@ -42,7 +41,7 @@ namespace CommentAPI.Controllers
         [SwaggerResponse(404, "Not found account")]
         public async Task<IActionResult> Login([FromBody] UserLoginRequest dto, CancellationToken cancellationToken)
         {
-            return await _loginHandler.HandleLoginAsync(dto, HttpContext, cancellationToken);
+            return await _loginHandler.Handle(dto, HttpContext, cancellationToken);
         }
 
         [HttpPost("logout")]
@@ -50,7 +49,7 @@ namespace CommentAPI.Controllers
         [SwaggerOperation(Summary = "User logout", Description = "Logs out the currently authenticated user.")]
         public IActionResult Logout()
         {
-            _logoutHandler.Logout(HttpContext);
+            _logoutHandler.Handle(HttpContext);
             return Ok(new { Message = "Logout successful" });
         }
     }

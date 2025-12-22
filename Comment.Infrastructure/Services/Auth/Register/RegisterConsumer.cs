@@ -42,7 +42,7 @@ namespace Comment.Infrastructure.Services.Auth.Register
             await _appDbContext.SaveChangesAsync(context.CancellationToken);
 
 
-            await context.RespondAsync(new OkResult());
+            await context.RespondAsync(new RegisterSuccesResult(newUser.Id, newUser.UserName, newUser.Roles, newUser));
         }
     }
 }

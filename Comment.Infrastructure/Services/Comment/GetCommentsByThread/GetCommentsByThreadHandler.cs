@@ -13,7 +13,7 @@ namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread
             _client = client;
         }
 
-        public async Task<IActionResult> GetCommentsByThreadHandle(Guid threadId, CommentsByThreadRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> Handle(Guid threadId, CommentsByThreadRequest request, CancellationToken cancellationToken)
         {
             var dto = new CommentsByThreadRequestDTO(threadId, request);
             var response = await _client.GetResponse<CommentsByThreadRequestDTO, CommentsListResponse>(dto, cancellationToken);

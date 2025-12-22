@@ -6,6 +6,6 @@ namespace Comment.Infrastructure.Services.Comment.UpdateComment
 {
     public interface IUpdateCommentHandler
     {
-        Task<IActionResult> UpdateCommentHandle(CommentUpdateRequest request, HttpContext http, CancellationToken cancellationToken);
+        Task<IActionResult> Handle(CommentUpdateRequest request, HttpContext http, CancellationToken cancellationToken);
     }
 }

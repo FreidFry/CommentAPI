@@ -6,7 +6,6 @@ using MassTransit;
 using MassTransit.MessageData.Values;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Caching.Distributed;
 using StackExchange.Redis.Extensions.Core.Abstractions;
 using static Comment.Infrastructure.Extensions.ClaimsExtensions;
 
@@ -24,7 +23,7 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
             _validator = validator;
         }
 
-        public async Task<IActionResult> CreateCommentHandleAsync(CommentCreateRequest request, HttpContext httpContext, CancellationToken cancellationToken)
+        public async Task<IActionResult> Handle(CommentCreateRequest request, HttpContext httpContext, CancellationToken cancellationToken)
         {
             var validationResult = await _validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
@@ -58,15 +57,9 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
 
             var response = await _client.GetResponse<CreateCommentSuccesResponse, StatusCodeResponse>(dto, cancellationToken);
 
-            if (response.Is(out Response<CreateCommentSuccesResponse> success))
-            {
-                return new OkResult();
-            }
+            if (response.Is(out Response<CreateCommentSuccesResponse> success)) return new StatusCodeResult(204);
 
-            if (response.Is(out Response<StatusCodeResponse> error))
-            {
-                return new BadRequestObjectResult(error.Message);
-            }
+            if (response.Is(out Response<StatusCodeResponse> error)) return new BadRequestObjectResult(error.Message.Message);
 
             return new BadRequestResult();
         }

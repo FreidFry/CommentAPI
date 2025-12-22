@@ -22,7 +22,7 @@ namespace Comment.Infrastructure.Services.Auth.Register
         }
 
 
-        public async Task<IActionResult> RegisterHandleAsync(UserRegisterRequest request, HttpContext httpContext, CancellationToken cancellationToken)
+        public async Task<IActionResult> Handle(UserRegisterRequest request, HttpContext httpContext, CancellationToken cancellationToken)
         {
             var response = await _client.GetResponse<RegisterSuccesResult, ConflictRegisterResponse>(request, cancellationToken);
 

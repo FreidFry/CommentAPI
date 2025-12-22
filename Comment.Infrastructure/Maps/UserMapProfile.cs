@@ -2,7 +2,7 @@
 using AutoMapper;
 using Comment.Core.Persistence;
 using Comment.Infrastructure.Services.User.DTOs.Request;
-using Comment.Infrastructure.Services.User.DTOs.Response;
+using Comment.Infrastructure.Services.User.GetProfile.Response;
 
 namespace Comment.Infrastructure.Maps
 {
@@ -10,7 +10,7 @@ namespace Comment.Infrastructure.Maps
     {
         public UserMapProfile()
         {
-            CreateMap<UserModel, CommonUserDataDTO>()
+            CreateMap<UserModel, ProfileDetailedResponse>()
                 .ForMember(dest => dest.AvatarTumbnailUrl, opt => opt.MapFrom(src => src.AvatarTumbnailUrl))
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserName))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))

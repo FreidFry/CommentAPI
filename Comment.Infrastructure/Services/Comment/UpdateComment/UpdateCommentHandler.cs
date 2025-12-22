@@ -20,7 +20,7 @@ namespace Comment.Infrastructure.Services.Comment.UpdateComment
             _client = client;
         }
 
-        public async Task<IActionResult> UpdateCommentHandle(CommentUpdateRequest request, HttpContext http, CancellationToken cancellationToken)
+        public async Task<IActionResult> Handle(CommentUpdateRequest request, HttpContext http, CancellationToken cancellationToken)
         {
             var validationResult = await _validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
@@ -30,9 +30,9 @@ namespace Comment.Infrastructure.Services.Comment.UpdateComment
             var dto = new CommentUpdateRequestDTO(callerId, request.CommentId, request.Content);
             var response = await _client.GetResponse<CommentViewModel, StatusCodeResponse, ValidatorErrorResponse>(dto);
 
-            if (response.Is(out Response<CommentViewModel>? comment) && comment != null) return new OkObjectResult(comment);
+            if (response.Is(out Response<CommentViewModel>? comment) && comment != null) return new OkObjectResult(comment.Message);
             if (response.Is(out Response<StatusCodeResponse> error)) return new StatusCodeResult(error.Message.StatusCode);
-            if (response.Is(out Response<ValidatorErrorResponse> e)) return new BadRequestObjectResult(e);
+            if (response.Is(out Response<ValidatorErrorResponse> e)) return new BadRequestObjectResult(e.Message.msg);
             return new StatusCodeResult(500);
         }
     }

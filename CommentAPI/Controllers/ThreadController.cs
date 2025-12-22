@@ -1,9 +1,17 @@
-using Comment.Infrastructure.Services.Comment;
-using Comment.Infrastructure.Services.Comment.DTOs.Request;
 using Comment.Infrastructure.Services.Comment.GetCommentsByThread;
 using Comment.Infrastructure.Services.Comment.GetCommentsByThread.Request;
-using Comment.Infrastructure.Services.Thread;
-using Comment.Infrastructure.Services.Thread.DTOs.Request;
+using Comment.Infrastructure.Services.Thread.CreateThread;
+using Comment.Infrastructure.Services.Thread.CreateThread.Request;
+using Comment.Infrastructure.Services.Thread.DeleteThread;
+using Comment.Infrastructure.Services.Thread.DeleteThread.Request;
+using Comment.Infrastructure.Services.Thread.GetDetailedThread;
+using Comment.Infrastructure.Services.Thread.GetDetailedThread.Request;
+using Comment.Infrastructure.Services.Thread.GetThreadsTree;
+using Comment.Infrastructure.Services.Thread.GetThreadsTree.Request;
+using Comment.Infrastructure.Services.Thread.RestoreThread;
+using Comment.Infrastructure.Services.Thread.RestoreThread.Request;
+using Comment.Infrastructure.Services.Thread.UpdateThread;
+using Comment.Infrastructure.Services.Thread.UpdateThread.Request;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -14,16 +22,30 @@ namespace CommentAPI.Controllers
     [Route("threads")]
     public class ThreadController : ControllerBase
     {
-        private readonly IThreadService _threadService;
-        private readonly ICommentService _commentService;
         private readonly IGetCommentsByThreadHandler _getCommentsByThreadHandler;
+        private readonly ICreateThreadHandler _createThreadHandler;
+        private readonly IGetDetailedThreadHandler _getDetailedThreadHandler;
+        private readonly IGetThreadTreeHandler _getThreadTreeHandler;
+        private readonly IUpdateThreadHandler _updateThreadHandler;
+        private readonly IDeleteThreadHandler _deleteThreadHandler;
+        private readonly IRestoreThreadHandler _restoreThreadHandler;
 
-
-        public ThreadController(IThreadService threadService, ICommentService commentService, IGetCommentsByThreadHandler getCommentsByThreadHandler)
+        public ThreadController(
+            IGetCommentsByThreadHandler getCommentsByThreadHandler,
+            ICreateThreadHandler createThreadHandler,
+            IGetDetailedThreadHandler getDetailedThreadHandler,
+            IGetThreadTreeHandler getThreadTreeHandler,
+            IUpdateThreadHandler updateThreadHandler,
+            IDeleteThreadHandler deleteThreadHandler,
+            IRestoreThreadHandler restoreThreadHandler)
         {
-            _threadService = threadService;
-            _commentService = commentService;
             _getCommentsByThreadHandler = getCommentsByThreadHandler;
+            _createThreadHandler = createThreadHandler;
+            _getDetailedThreadHandler = getDetailedThreadHandler;
+            _getThreadTreeHandler = getThreadTreeHandler;
+            _updateThreadHandler = updateThreadHandler;
+            _deleteThreadHandler = deleteThreadHandler;
+            _restoreThreadHandler = restoreThreadHandler;
         }
 
         [HttpGet]
@@ -32,22 +54,20 @@ namespace CommentAPI.Controllers
             Summary = "Get Threads",
             Description = "Retrieve a list of threads with optional pagination."
         )]
-        public async Task<IActionResult> GetThreads([FromQuery] DateTime? after, [FromQuery] int limit = 20, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> GetThreads([FromQuery] ThreadsThreeRequest dto, CancellationToken cancellationToken = default)
         {
-            var dto = new ThreadsThreeDTO(after, limit);
-            return await _threadService.GetThreadsThreeAsync(dto, cancellationToken);
+            return await _getThreadTreeHandler.Handle(dto, cancellationToken);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{ThreadId}")]
         [AllowAnonymous]
         [SwaggerOperation(
             Summary = "Get Thread by ID",
             Description = "Retrieve a specific thread by its unique identifier."
         )]
-        public async Task<IActionResult> GetById([FromRoute] Guid id, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetById([FromRoute] ThreadDetaliRequest dto, CancellationToken cancellationToken)
         {
-            var dto = new ThreadFindDTO(id);
-            return await _threadService.GetByIdAsync(dto, HttpContext, cancellationToken);
+            return await _getDetailedThreadHandler.Handle(dto, HttpContext, cancellationToken);
         }
 
         [HttpPost]
@@ -56,31 +76,32 @@ namespace CommentAPI.Controllers
             Summary = "Create Thread",
             Description = "Create a new thread with the provided details."
         )]
-        public async Task<IActionResult> Create([FromBody] ThreadCreateDTO dto, CancellationToken cancellationToken)
+        public async Task<IActionResult> Create([FromBody] ThreadCreateRequest dto, CancellationToken cancellationToken)
         {
-            return await _threadService.CreateAsync(dto, HttpContext, cancellationToken);
+            return await _createThreadHandler.Handle(dto, HttpContext, cancellationToken);
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("{threadId}")]
         [Authorize]
         [SwaggerOperation(
             Summary = "Update Thread",
             Description = "Update an existing thread with new information."
         )]
-        public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] ThreadUpdateDTO dto, CancellationToken cancellationToken)
+        public async Task<IActionResult> Update([FromRoute] Guid threadId, [FromBody] UpdateThreadBody request, CancellationToken cancellationToken)
         {
-            return await _threadService.UpdateAsync(dto, HttpContext, cancellationToken);
+            var dto = new UpdateThreadRequest(threadId, request.Title, request.Context);
+            return await _updateThreadHandler.Handle(dto, HttpContext, cancellationToken);
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{ThreadId}")]
         [Authorize]
         [SwaggerOperation(
             Summary = "Delete Thread",
             Description = "Delete a thread by its unique identifier."
         )]
-        public async Task<IActionResult> Delete([FromRoute] Guid id, CancellationToken cancellationToken)
+        public async Task<IActionResult> Delete([FromRoute] DeleteThreadRequest request, CancellationToken cancellationToken)
         {
-            return await _threadService.DeleteAsync(id, HttpContext, cancellationToken);
+            return await _deleteThreadHandler.Handle(request, HttpContext, cancellationToken);
         }
 
         [HttpGet("{threadId}/Comments")]
@@ -91,18 +112,18 @@ namespace CommentAPI.Controllers
         )]
         public async Task<IActionResult> GetByThread([FromRoute] Guid threadId, [FromQuery] CommentsByThreadRequest dto, CancellationToken cancellationToken)
         {
-            return await _getCommentsByThreadHandler.GetCommentsByThreadHandle(threadId, dto, cancellationToken);
+            return await _getCommentsByThreadHandler.Handle(threadId, dto, cancellationToken);
         }
 
-        [HttpPut]
+        [HttpPut("{ThreadId}")]
         [Authorize]
         [SwaggerOperation(
             Summary = "Restore Thread",
             Description = "Restore a previously deleted thread by its unique identifier."
         )]
-        public async Task<IActionResult> RestoreThreadAsync([FromRoute] Guid id, CancellationToken cancellationToken)
+        public async Task<IActionResult> RestoreThreadAsync([FromRoute] RestoreThreadRequest request, CancellationToken cancellationToken)
         {
-            return await _threadService.RestoreAsync(id, HttpContext, cancellationToken);
+            return await _restoreThreadHandler.Handle(request, HttpContext, cancellationToken);
         }
     }
 }

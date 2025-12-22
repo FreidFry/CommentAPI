@@ -6,6 +6,6 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
 {
     public interface ICreateCommentHandler
     {
-        Task<IActionResult> CreateCommentHandleAsync(CommentCreateRequest request, HttpContext httpContext, CancellationToken cancellationToken);
+        Task<IActionResult> Handle(CommentCreateRequest request, HttpContext httpContext, CancellationToken cancellationToken);
     }
 }

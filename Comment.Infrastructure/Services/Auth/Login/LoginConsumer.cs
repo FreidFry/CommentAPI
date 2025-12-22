@@ -1,5 +1,6 @@
 ﻿using Comment.Core.Data;
 using Comment.Core.Interfaces;
+using Comment.Infrastructure.CommonDTOs;
 using Comment.Infrastructure.Services.Auth.DTOs;
 using Comment.Infrastructure.Services.Auth.Login.Response;
 using MassTransit;
@@ -24,12 +25,12 @@ namespace Comment.Infrastructure.Services.Auth.Login
 
             if (user == null)
             {
-                await context.RespondAsync(new LoginNotFound("User not registered."));
+                await context.RespondAsync(new StatusCodeResponse("User not registered.", 404));
                 return;
             }
             if (!_passwordHasher.VerifyPassword(context.Message.Password, user.HashPassword))
             {
-                await context.RespondAsync(new LoginUnauthorized());
+                await context.RespondAsync(new StatusCodeResponse("Forbind.", 403));
                 return;
             }
 

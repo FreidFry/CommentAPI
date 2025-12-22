@@ -6,6 +6,6 @@ namespace Comment.Infrastructure.Services.Auth.Register
 {
     public interface IRegisterHandler
     {
-        Task<IActionResult> RegisterHandleAsync(UserRegisterRequest request, HttpContext httpContext, CancellationToken cancellationToken);
+        Task<IActionResult> Handle(UserRegisterRequest request, HttpContext httpContext, CancellationToken cancellationToken);
     }
 }

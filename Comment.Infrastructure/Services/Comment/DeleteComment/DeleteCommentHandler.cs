@@ -14,14 +14,14 @@ namespace Comment.Infrastructure.Services.Comment.DeleteComment
         {
             _client = client;
         }
-        public async Task<IActionResult> DeleteCommentHandle(DeleteCommentRequest request, HttpContext http, CancellationToken cancellationToken)
+        public async Task<IActionResult> Handle(DeleteCommentRequest request, HttpContext http, CancellationToken cancellationToken)
         {
             var callerId = GetCallerId(http);
             var dto = new DeleteCommentRequestDTO(request.CommentId, callerId);
             var response = await _client.GetResponse<StatusCodeResponse, ValidatorErrorResponse>(dto);
 
             if (response.Is(out Response<StatusCodeResponse> statusCodeResponse)) return new StatusCodeResult(statusCodeResponse.Message.StatusCode);
-            if (response.Is(out Response<ValidatorErrorResponse> e)) return new BadRequestObjectResult(e);
+            if (response.Is(out Response<ValidatorErrorResponse> e)) return new BadRequestObjectResult(e.Message.msg);
 
             return new StatusCodeResult(500);
         }

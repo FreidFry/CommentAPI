@@ -4,6 +4,6 @@ namespace Comment.Infrastructure.Services.Auth.Logout
 {
     public interface ILogoutHandler
     {
-        void Logout(HttpContext httpContext);
+        void Handle(HttpContext httpContext);
     }
 }

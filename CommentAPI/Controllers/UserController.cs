@@ -1,5 +1,5 @@
-using Comment.Infrastructure.Services.User;
-using Comment.Infrastructure.Services.User.DTOs.Request;
+using Comment.Infrastructure.Services.User.GetProfile;
+using Comment.Infrastructure.Services.User.GetProfile.Request;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -9,23 +9,23 @@ namespace CommentAPI.Controllers
     [ApiController]
     [Route("Profile")]
     [Authorize]
-    public class UserController(IUserService userService) : ControllerBase
+    public class UserController(IGetProfileHandler getProfileHandler) : ControllerBase
     {
-        private readonly IUserService _userService = userService;
+        private readonly IGetProfileHandler _getProfileHandler = getProfileHandler;
 
-        [HttpGet("{id}")]
+        [HttpGet("{Id}")]
         [AllowAnonymous]
         [SwaggerOperation(Summary = "Get user profile by id", Description = "Get user profile by id")]
-        public async Task<IActionResult> GetById([FromRoute] Guid? id, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetById([FromRoute] ProfileGetRequest request, CancellationToken cancellationToken)
         {
-            return await _userService.GetByIdAsync(id, HttpContext, cancellationToken);
+            return await _getProfileHandler.Handle(request, HttpContext, cancellationToken);
         }
 
-        [HttpPut("avatar")]
-        public async Task<IActionResult> UpdateAvatar([FromBody] UserUpdateAvatarDTO dto, CancellationToken cancellationToken)
-        {
-            return await _userService.UpdateProfileAvatarAsync(dto, HttpContext, cancellationToken);
-        }
+        //[HttpPut("avatar")]
+        //public async Task<IActionResult> UpdateAvatar([FromBody] UserUpdateAvatarDTO dto, CancellationToken cancellationToken)
+        //{
+        //    return await _userService.UpdateProfileAvatarAsync(dto, HttpContext, cancellationToken);
+        //}
     }
 }
 
