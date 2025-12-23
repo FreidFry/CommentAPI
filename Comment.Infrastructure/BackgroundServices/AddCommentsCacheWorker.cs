@@ -42,7 +42,6 @@ namespace Comment.Infrastructure.BackgroundServices
                         await WarmUpThreadCache(threadId, dbContext, SortByEnum.CreateAt, redisDb, stoppingToken);
                         await WarmUpThreadCache(threadId, dbContext, SortByEnum.UserName, redisDb, stoppingToken);
                         await WarmUpThreadCache(threadId, dbContext, SortByEnum.Email, redisDb, stoppingToken);
-                        BatchState = true;
                     }
                 }
 
