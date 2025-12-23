@@ -54,10 +54,12 @@ namespace Comment.Infrastructure.BackgroundServices
 
         private async Task WarmUpThreadCache(Guid threadId, AppDbContext dbContext, SortByEnum sortBy, IDatabase redisDb, CancellationToken cancellatinToken)
         {
-            var query = dbContext.Comments
+            var query = dbContext.Threads
                 .AsNoTracking()
-                .Include(c => c.User)
-                .Where(c => c.ThreadId == threadId && c.ParentDepth == 0 && !c.IsDeleted && !c.IsBaned);
+                .Where(t => t.Id == threadId)
+                .SelectMany(t => t.Comments)
+                    .Include(c => c.User)
+                    .Where(c => c.ParentDepth == 0 && !c.IsDeleted && !c.IsBaned);
 
             List<CommentModel> comments = [];
             switch (sortBy)
