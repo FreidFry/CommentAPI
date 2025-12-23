@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Comment.Core.Data;
-using Comment.Core.Persistence;
 using Comment.Infrastructure.Enums;
 using Comment.Infrastructure.Services.Comment.DTOs.Response;
 using Microsoft.EntityFrameworkCore;
@@ -12,14 +11,14 @@ using System.Text.Json;
 
 namespace Comment.Infrastructure.BackgroundServices
 {
-    public class AddCommentsCacheWorker : BackgroundService
+    public class CommentsCacheWorker : BackgroundService
     {
         private readonly IConnectionMultiplexer _redis;
         private readonly IServiceProvider _services;
         private readonly IMapper _mapper;
         private readonly int _commentsToCache = 75;
 
-        public AddCommentsCacheWorker(IConnectionMultiplexer redis, IServiceProvider services, IMapper mapper)
+        public CommentsCacheWorker(IConnectionMultiplexer redis, IServiceProvider services, IMapper mapper)
         {
             _redis = redis;
             _services = services;
@@ -36,6 +35,7 @@ namespace Comment.Infrastructure.BackgroundServices
                     var redisDb = _redis.GetDatabase();
 
                     var activeThreadIds = await dbContext.Threads
+                        .AsNoTracking()
                         .Where(t => !t.IsDeleted && !t.IsBanned)
                         .OrderByDescending(t => t.Comments.Max(c => c.CreatedAt))
                         .Select(t => t.Id)
@@ -44,9 +44,9 @@ namespace Comment.Infrastructure.BackgroundServices
 
                     foreach (var threadId in activeThreadIds)
                     {
-                        await WarmUpThreadCache(threadId, dbContext, SortByEnum.CreateAt, redisDb, stoppingToken);
-                        await WarmUpThreadCache(threadId, dbContext, SortByEnum.UserName, redisDb, stoppingToken);
-                        await WarmUpThreadCache(threadId, dbContext, SortByEnum.Email, redisDb, stoppingToken);
+                        await WarmUpCommentCache(threadId, dbContext, SortByEnum.CreateAt, redisDb, stoppingToken, true);
+                        await WarmUpCommentCache(threadId, dbContext, SortByEnum.UserName, redisDb, stoppingToken);
+                        await WarmUpCommentCache(threadId, dbContext, SortByEnum.Email, redisDb, stoppingToken);
                     }
                 }
 
@@ -55,7 +55,7 @@ namespace Comment.Infrastructure.BackgroundServices
         }
 
 
-        private async Task WarmUpThreadCache(Guid threadId, AppDbContext dbContext, SortByEnum sortBy, IDatabase redisDb, CancellationToken cancellatinToken)
+        private async Task WarmUpCommentCache(Guid threadId, AppDbContext dbContext, SortByEnum sortBy, IDatabase redisDb, CancellationToken cancellatinToken, bool batchComment = false)
         {
             var query = dbContext.Threads
                 .AsNoTracking()
@@ -109,8 +109,7 @@ namespace Comment.Infrastructure.BackgroundServices
             {
                 string json = JsonSerializer.Serialize(comment);
 
-                    batch.StringSetAsync($"comment:{comment.Id}", json, TimeSpan.FromHours(1));
-
+                if (batchComment) batch.StringSetAsync($"comment:{comment.Id}", json, TimeSpan.FromHours(1));
                 switch (sortBy)
                 {
                     case SortByEnum.CreateAt:

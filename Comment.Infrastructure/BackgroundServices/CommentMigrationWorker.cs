@@ -1,5 +1,6 @@
 ﻿using Comment.Core.Data;
 using Comment.Core.Persistence;
+using Comment.Infrastructure.Services.Thread.DTOs;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using StackExchange.Redis;
@@ -9,40 +10,70 @@ namespace Comment.Infrastructure.BackgroundServices
 {
     public class CommentMigrationWorker : BackgroundService
     {
-        private readonly IDatabase _redis;
+        private readonly IConnectionMultiplexer _redis;
         private readonly IServiceProvider _services;
 
         public CommentMigrationWorker(IConnectionMultiplexer redis, IServiceProvider services)
         {
-            _redis = redis.GetDatabase();
+            _redis = redis;
             _services = services;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            var redisDb = _redis.GetDatabase();
+
             while (!stoppingToken.IsCancellationRequested)
             {
-                var commentJson = await _redis.ListRightPopAsync("comments_queue");
+                try
+                {
+                    var commentsJson = await redisDb.ListRightPopAsync("comments_queue", 30);
 
-                if (!commentJson.IsNull)
+                    if (commentsJson == null || !commentsJson.Any())
+                    {
+                        await Task.Delay(5000, stoppingToken);
+                        continue;
+                    }
+
                     using (var scope = _services.CreateScope())
                     {
-                        try
-                        {
-                            var comment = JsonSerializer.Deserialize<CommentModel>(commentJson.ToString());
+                        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                        var newComments = new List<CommentModel>();
 
-                            var db = _services.GetRequiredService<AppDbContext>();
-                            db.Comments.Add(comment);
-                            await db.SaveChangesAsync();
-                        }
-                        catch (Exception ex)
+                        foreach (var json in commentsJson)
                         {
-                            Console.WriteLine($"Ошибка сохранения в БД: {ex.Message}");
-                            await _redis.ListLeftPushAsync("comments_queue", commentJson);
+                            var comment = JsonSerializer.Deserialize<CommentModel>(json.ToString());
+                            if (comment != null) newComments.Add(comment);
+                        }
+                        if (newComments.Any())
+                        {
+                            await db.Comments.AddRangeAsync(newComments);
+                            await db.SaveChangesAsync(stoppingToken);
+
+                            foreach (var threadId in newComments.Select(c => c.ThreadId).Distinct())
+                            {
+                                var countInBatch = newComments.Count(c => c.ThreadId == threadId);
+                                await IncrementThreadCommentsCount(redisDb, threadId, countInBatch);
+                            }
                         }
                     }
-                else
-                    await Task.Delay(1000, stoppingToken);
+                }
+                catch (Exception ex)
+                {
+                    await Task.Delay(5000, stoppingToken);
+                }
+            }
+        }
+
+        private async Task IncrementThreadCommentsCount(IDatabase db, Guid threadId, int count)
+        {
+            var key = $"thread:{threadId}:preview";
+            var json = await db.StringGetAsync(key);
+            if (!json.IsNull)
+            {
+                var preview = JsonSerializer.Deserialize<ThreadsResponseViewModel>(json.ToString());
+                preview.CommentCount += count;
+                await db.StringSetAsync(key, JsonSerializer.Serialize(preview), TimeSpan.FromHours(1));
             }
         }
     }

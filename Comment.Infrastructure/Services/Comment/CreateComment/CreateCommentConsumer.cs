@@ -1,4 +1,5 @@
-﻿using Comment.Core.Data;
+﻿using AutoMapper;
+using Comment.Core.Data;
 using Comment.Core.Interfaces;
 using Comment.Core.Persistence;
 using Comment.Infrastructure.CommonDTOs;
@@ -6,6 +7,7 @@ using Comment.Infrastructure.Hubs;
 using Comment.Infrastructure.Interfaces;
 using Comment.Infrastructure.Services.Comment.CreateComment.Request;
 using Comment.Infrastructure.Services.Comment.CreateComment.Response;
+using Comment.Infrastructure.Services.Comment.DTOs.Response;
 using MassTransit;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -25,8 +27,9 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
         private readonly IDatabase _redisDatabase;
         private readonly IRedisDatabase _redisCache;
         private readonly IHubContext<CommentHub> _hubContext;
+        private readonly IMapper _mapper;
 
-        public CreateCommentConsumer(AppDbContext appDbContext, IImageTransform imageTransform, IHtmlSanitize htmlSanitizer, IFileProvider fileProvider, IRedisDatabase redisCache, IConnectionMultiplexer connectionMultiplexer, IHubContext<CommentHub> hubContext)
+        public CreateCommentConsumer(AppDbContext appDbContext, IImageTransform imageTransform, IHtmlSanitize htmlSanitizer, IFileProvider fileProvider, IRedisDatabase redisCache, IConnectionMultiplexer connectionMultiplexer, IHubContext<CommentHub> hubContext, IMapper mapper)
         {
             _appDbContext = appDbContext;
             _imageTransform = imageTransform;
@@ -35,6 +38,7 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
             _redisCache = redisCache;
             _redisDatabase = connectionMultiplexer.GetDatabase();
             _hubContext = hubContext;
+            _mapper = mapper;
         }
 
         public async Task Consume(ConsumeContext<CommentCreateRequestDTO> context)
@@ -115,19 +119,26 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
 
             //send to redis
 
-            string json = JsonSerializer.Serialize(comment);
+            var commentView = _mapper.Map<CommentViewModel>(comment);
+
+            string json = JsonSerializer.Serialize(commentView);
 
             string dateIndexKey = $"thread:{comment.ThreadId}:comments:sort:createat";
             string nameIndexKey = $"thread:{comment.ThreadId}:comments:sort:username";
 
-            await _redisDatabase.StringSetAsync($"comment:{comment.Id}", json);
+            var batch = _redisDatabase.CreateBatch();
+            batch.ListRightPushAsync("comments_queue", JsonSerializer.Serialize(comment));
 
-            await _redisDatabase.SortedSetAddAsync(dateIndexKey, comment.Id.ToString(), comment.CreatedAt.Ticks);
+            batch.StringSetAsync($"comment:{comment.Id}", json);
+
+            batch.SortedSetAddAsync(dateIndexKey, comment.Id.ToString(), comment.CreatedAt.Ticks);
             double nameScore = GetNameScore(comment.User.UserName);
-            await _redisDatabase.SortedSetAddAsync(nameIndexKey, comment.Id.ToString(), nameScore);
+            batch.SortedSetAddAsync(nameIndexKey, comment.Id.ToString(), nameScore);
 
-            await _redisDatabase.SortedSetRemoveRangeByRankAsync(dateIndexKey, 0, -76);
-            await _redisDatabase.SortedSetRemoveRangeByRankAsync(nameIndexKey, 0, -76);
+            batch.SortedSetRemoveRangeByRankAsync(dateIndexKey, 0, -76);
+            batch.SortedSetRemoveRangeByRankAsync(nameIndexKey, 0, -76);
+
+            batch.Execute();
         }
 
         public async Task NotifyAboutComment(CommentModel comment)

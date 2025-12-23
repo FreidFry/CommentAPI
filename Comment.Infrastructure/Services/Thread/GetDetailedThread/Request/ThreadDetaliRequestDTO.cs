@@ -1,5 +1,5 @@
-namespace Comment.Infrastructure.Services.Thread.DTOs.Request
+﻿namespace Comment.Infrastructure.Services.Thread.DTOs.Request
 {
-    public record ThreadDetaliRequestDTO(Guid ThreadId, Guid? callerId);
+    public record ThreadDetaliRequestDTO(Guid ThreadId, Guid? СallerId);
 }
 

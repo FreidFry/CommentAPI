@@ -4,7 +4,6 @@ using Comment.Infrastructure.Services.Auth.Login;
 using CommentAPI.Extencions.LoadModules;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using StackExchange.Redis;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);

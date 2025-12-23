@@ -21,11 +21,11 @@ namespace Comment.Infrastructure.Services.Thread.GetDetailedThread
         {
             var callerId = ClaimsExtensions.GetCallerId(httpContext);
             var dto = new ThreadDetaliRequestDTO(request.ThreadId, callerId);
-            var response = await _client.GetResponse<DetailedThreadResponse, StatusCodeResponse, ValidatorErrorResponse>(dto, cancellationToken);
+            var response = await _client.GetResponse<DetailedThreadResponse, ValidatorErrorResponse, JsonResponse>(dto, cancellationToken);
 
             if (response.Is(out Response<DetailedThreadResponse> tree)) return new OkObjectResult(tree.Message);
-            if (response.Is(out Response<StatusCodeResponse> statusCode)) return new StatusCodeResult(statusCode.Message.StatusCode);
-            if (response.Is(out Response<ValidatorErrorResponse> e)) return new BadRequestObjectResult(e.Message.msg);
+            if (response.Is(out Response<JsonResponse> json)) return new OkObjectResult(json.Message.json);
+            if (response.Is(out Response<StatusCodeResponse> StatusCode)) return new StatusCodeResult(StatusCode.Message.StatusCode);
 
             return new StatusCodeResult(500);
         }

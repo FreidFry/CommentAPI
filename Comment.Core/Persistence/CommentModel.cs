@@ -6,25 +6,25 @@ namespace Comment.Core.Persistence
     public class CommentModel
     {
 
-        public Guid Id { get; } = Guid.NewGuid();
-        public string Content { get; private set; }
-        public DateTime CreatedAt { get; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; private set; }
-        public bool IsDeleted { get; private set; } = false;
-        public bool IsBaned { get; private set; } = false;
-        public Guid ThreadId { get; }
-        public ThreadModel? Thread { get; }
-        public string? ImageUrl { get; private set; }
-        public string? ImageTumbnailUrl { get; private set; }
-        public string? FileUrl { get; private set; }
+        [JsonInclude] public Guid Id { get; private set; } = Guid.NewGuid();
+        [JsonInclude] public string Content { get; private set; }
+        [JsonInclude] public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+        [JsonInclude] public DateTime? UpdatedAt { get; private set; }
+        [JsonInclude] public bool IsDeleted { get; private set; } = false;
+        [JsonInclude] public bool IsBaned { get; private set; } = false;
+        [JsonInclude] public Guid ThreadId { get; private set; }
+        [JsonIgnore] public ThreadModel? Thread { get; }
+        [JsonInclude] public string? ImageUrl { get; private set; }
+        [JsonInclude] public string? ImageTumbnailUrl { get; private set; }
+        [JsonInclude] public string? FileUrl { get; private set; }
 
 
-        public Guid? ParentCommentId { get; private set; }
-        public CommentModel? ParentComment { get; private set; }
+        [JsonInclude] public Guid? ParentCommentId { get; private set; }
+        [JsonIgnore] public CommentModel? ParentComment { get; private set; }
         public int ParentDepth { get; set; } = 0;
         [JsonIgnore] public UserModel User { get; }
-        public Guid UserId { get; }
-        public ICollection<CommentModel> Replyes { get; } = [];
+        [JsonInclude] public Guid UserId { get; private set; }
+        [JsonIgnore] public ICollection<CommentModel> Replyes { get; } = [];
 
         public CommentModel(string content, UserModel user, ThreadModel thread, CommentModel? parent = null)
         {
@@ -40,7 +40,7 @@ namespace Comment.Core.Persistence
                 ParentDepth = ParentComment.ParentDepth + 1;
             }
         }
-
+        [JsonConstructor]
         private CommentModel()
         {
 

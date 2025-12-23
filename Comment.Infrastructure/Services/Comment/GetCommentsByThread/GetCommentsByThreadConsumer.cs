@@ -47,7 +47,8 @@ namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread
                 foreach (var res in results.Where(r => r.HasValue))
                 {
                     var comment = JsonSerializer.Deserialize<CommentViewModel>(res!.ToString());
-                    finalComments.Add(_mapper.Map<CommentViewModel>(comment));
+                    if (comment != null)
+                        finalComments.Add(comment);
                 }
             }
 

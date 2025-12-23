@@ -8,6 +8,8 @@ using Comment.Infrastructure.Services.Thread.GetThreadsTree.Response;
 using FluentValidation;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
+using System.Text.Json;
 
 namespace Comment.Infrastructure.Services.Thread.GetThreadsTree
 {
@@ -15,46 +17,87 @@ namespace Comment.Infrastructure.Services.Thread.GetThreadsTree
     {
         private readonly AppDbContext _appDbContext;
         private readonly IMapper _mapper;
+        private readonly IDatabase _dataBase;
 
-        public GetThreadTreeConsumer(AppDbContext context, IMapper mapper)
+        public GetThreadTreeConsumer(AppDbContext context, IMapper mapper, IConnectionMultiplexer connectionMultiplexer)
         {
             _appDbContext = context;
             _mapper = mapper;
+            _dataBase = connectionMultiplexer.GetDatabase();
         }
 
         public async Task Consume(ConsumeContext<ThreadsThreeRequest> context)
         {
-            var dto = context.Message;
+            var request = context.Message;
             var cancellationToken = context.CancellationToken;
-            var query = _appDbContext.Threads
-    .Where(t => !t.IsDeleted && !t.IsBanned && !t.OwnerUser.IsDeleted && !t.OwnerUser.IsBanned)
-    .OrderByDescending(t => t.CreatedAt);
 
-            if (dto.After.HasValue)
-                query = (IOrderedQueryable<ThreadModel>)query.Where(t => t.CreatedAt < dto.After);
+            var paginatedLimit = request.Limit + 1;
 
-            switch (dto.Limit)
+            List<ThreadsResponseViewModel> finalThreads = [];
+
+            var cachedIds = await GetIdsFromRedis("all_active_previews", _dataBase, request.After, paginatedLimit, cancellationToken);
+
+            if (cachedIds.Length > 0)
             {
-                case <= 0:
-                    dto = dto with { Limit = 10 };
-                    break;
-                case > 50:
-                    dto = dto with { Limit = 50 };
-                    break;
+                var tasks = cachedIds.Select(id => _dataBase.StringGetAsync($"thread:{id}:preview"));
+                var results = await Task.WhenAll(tasks);
+                foreach (var res in results.Where(r => r.HasValue))
+                {
+                    var comment = JsonSerializer.Deserialize<ThreadsResponseViewModel>(res!.ToString());
+                    finalThreads.Add(_mapper.Map<ThreadsResponseViewModel>(comment));
+                }
             }
 
+            if (finalThreads.Count < paginatedLimit)
+            {
+                int needed = paginatedLimit - finalThreads.Count;
+
+                DateTime? effectiveAfter = finalThreads.Count > 0
+                    ? finalThreads.Last().CreatedAt : request.After;
+
+                var dbThreads = await GetFromDb(effectiveAfter, needed, context.CancellationToken);
+
+                finalThreads.AddRange(dbThreads);
+            }
+
+            bool HasMore = false;
+            if (finalThreads.Count > request.Limit)
+            {
+                HasMore = true;
+                finalThreads.RemoveAt(request.Limit);
+            }
+
+            DateTime? nextCursor = null;
+            if (HasMore)
+            {
+                var last = finalThreads.Last();
+                nextCursor = last.CreatedAt;
+            }
+
+            await context.RespondAsync(new ThreadsTreeResponse(finalThreads, nextCursor, HasMore));
+        }
+
+
+        private async Task<List<ThreadsResponseViewModel>> GetFromDb(DateTime? after, int need, CancellationToken cancellationToken)
+        {
+            var query = _appDbContext.Threads
+                .Where(t => !t.IsDeleted && !t.IsBanned && !t.OwnerUser.IsDeleted && !t.OwnerUser.IsBanned)
+                .OrderByDescending(t => t.CreatedAt);
+
+            if (after.HasValue)
+                query = (IOrderedQueryable<ThreadModel>)query.Where(t => t.CreatedAt < after);
+
             var ThreadsThree = await query
-                .Take(dto.Limit)
+                .Take(need)
                 .ProjectTo<ThreadsResponseViewModel>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
 
-            bool HasMore = await query
-                .Skip(dto.Limit)
-                .AnyAsync(cancellationToken);
+            return ThreadsThree;
+        }
 
-            DateTime? nextCursor = ThreadsThree.LastOrDefault()?.CreatedAt;
-
-            await context.RespondAsync(new ThreadsTreeResponse(ThreadsThree, nextCursor, HasMore));
+        private static async Task<RedisValue[]> GetIdsFromRedis(string keys, IDatabase db, DateTime? after, int limit, CancellationToken cancellationToken)
+        {
+            return await db.SortedSetRangeByScoreAsync(keys, double.NegativeInfinity, after?.ToUniversalTime().Ticks ?? double.PositiveInfinity, Exclude.Both, Order.Descending, 0, limit);
         }
     }
 }

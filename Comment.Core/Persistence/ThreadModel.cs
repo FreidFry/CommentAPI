@@ -4,17 +4,17 @@ namespace Comment.Core.Persistence
 {
     public class ThreadModel
     {
-        public Guid Id { get; } = Guid.NewGuid();
-        public Guid OwnerId { get; private set; }
-        public string Title { get; private set; }
-        public string Context { get; private set; }
-        public bool IsDeleted { get; private set; } = false;
-        public bool IsBanned { get; private set; } = false;
+        [JsonInclude] public Guid Id { get; private set; } = Guid.NewGuid();
+        [JsonInclude] public Guid OwnerId { get; private set; }
+        [JsonInclude] public string Title { get; private set; }
+        [JsonInclude] public string Context { get; private set; }
+        [JsonInclude] public bool IsDeleted { get; private set; } = false;
+        [JsonInclude] public bool IsBanned { get; private set; } = false;
 
-        public DateTime CreatedAt { get; } = DateTime.UtcNow;
+        [JsonInclude] public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
         public DateTime? LastUpdatedAt { get; set; }
         [JsonIgnore] public UserModel OwnerUser { get; }
-        public ICollection<CommentModel> Comments { get; } = [];
+        [JsonIgnore] public ICollection<CommentModel> Comments { get; } = [];
 
         public ThreadModel(string title, string context, UserModel user)
         {
@@ -24,6 +24,7 @@ namespace Comment.Core.Persistence
             OwnerUser = user;
         }
 
+        [JsonConstructor]
         private ThreadModel()
         {
             

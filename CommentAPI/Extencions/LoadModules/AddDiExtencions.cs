@@ -106,8 +106,10 @@ namespace CommentAPI.Extencions.LoadModules
 
             #endregion
 
+            services.AddHostedService<ThreadCacheWorker>();
+            services.AddHostedService<CommentsCacheWorker>();
             services.AddHostedService<CommentMigrationWorker>();
-            services.AddHostedService<AddCommentsCacheWorker>();
+            services.AddHostedService<ThreadMigrationWorker>();
         }
     }
 }
