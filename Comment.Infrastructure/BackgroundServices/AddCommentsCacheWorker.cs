@@ -14,7 +14,6 @@ namespace Comment.Infrastructure.BackgroundServices
         private readonly IConnectionMultiplexer _redis;
         private readonly IServiceProvider _services;
         private readonly int _commentsToCache = 75;
-        private bool BatchState = true;
 
         public AddCommentsCacheWorker(IConnectionMultiplexer redis, IServiceProvider services)
         {
@@ -103,11 +102,7 @@ namespace Comment.Infrastructure.BackgroundServices
             {
                 string json = JsonSerializer.Serialize(comment);
 
-                if (BatchState)
-                {
                     batch.StringSetAsync($"comment:{comment.Id}", json, TimeSpan.FromHours(1));
-                    BatchState = false;
-                }
 
                 switch (sortBy)
                 {
@@ -134,7 +129,8 @@ namespace Comment.Infrastructure.BackgroundServices
         {
             if (string.IsNullOrEmpty(name)) return 0;
             byte[] bytes = System.Text.Encoding.UTF8.GetBytes(name.ToLower().PadRight(8));
-            return BitConverter.ToDouble(bytes, 0);
+            var score = BitConverter.ToDouble(bytes, 0);
+            return score;
         }
     }
 }

@@ -9,11 +9,9 @@ namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread
     public class GetCommentsByThreadHandler : IGetCommentsByThreadHandler
     {
         private readonly IRequestClient<CommentsByThreadRequestDTO> _client;
-        private readonly IDatabase _dataBase;
-        public GetCommentsByThreadHandler(IRequestClient<CommentsByThreadRequestDTO> client, IConnectionMultiplexer connectionMultiplexer)
+        public GetCommentsByThreadHandler(IRequestClient<CommentsByThreadRequestDTO> client)
         {
             _client = client;
-            _dataBase = connectionMultiplexer.GetDatabase();
         }
 
         public async Task<IActionResult> Handle(Guid threadId, CommentsByThreadRequest request, CancellationToken cancellationToken)

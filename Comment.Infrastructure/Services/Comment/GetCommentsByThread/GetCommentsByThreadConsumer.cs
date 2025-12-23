@@ -30,13 +30,15 @@ namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread
             var request = context.Message;
             var cancellationToken = context.CancellationToken;
 
+            var paginatedLimit = request.Limit + 1;
+
             string sortKey = request.SortByEnum.ToString().ToLower();
             string indexKey = $"thread:{request.ThreadId}:comments:sort:{sortKey}";
             var order = request.IsAscending ? Order.Ascending : Order.Descending;
 
             List<CommentViewModel> finalComments = [];
 
-            var cachedIds = await GetIdsFromRedis(_dataBase, indexKey, request.After, request.SortByEnum, order, request.Limit);
+            var cachedIds = await GetIdsFromRedis(_dataBase, indexKey, request.After, request.SortByEnum, order, paginatedLimit);
 
             if (cachedIds.Length > 0)
             {
@@ -49,9 +51,9 @@ namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread
                 }
             }
 
-            if (finalComments.Count < request.Limit)
+            if (finalComments.Count < paginatedLimit)
             {
-                int needed = (request.Limit + 1) - finalComments.Count;
+                int needed = paginatedLimit - finalComments.Count;
 
                 string? effectiveAfter = finalComments.Count > 0
                     ? GetCursorFromItem(finalComments.Last(), request.SortByEnum)
@@ -131,7 +133,7 @@ namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread
             }
 
             var comments = await rootList
-                .Take(need + 1)
+                .Take(need)
                 .ProjectTo<CommentViewModel>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
 
