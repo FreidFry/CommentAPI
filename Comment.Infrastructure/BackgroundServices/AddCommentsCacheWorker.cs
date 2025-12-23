@@ -1,6 +1,9 @@
-﻿using Comment.Core.Data;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Comment.Core.Data;
 using Comment.Core.Persistence;
 using Comment.Infrastructure.Enums;
+using Comment.Infrastructure.Services.Comment.DTOs.Response;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -13,12 +16,14 @@ namespace Comment.Infrastructure.BackgroundServices
     {
         private readonly IConnectionMultiplexer _redis;
         private readonly IServiceProvider _services;
+        private readonly IMapper _mapper;
         private readonly int _commentsToCache = 75;
 
-        public AddCommentsCacheWorker(IConnectionMultiplexer redis, IServiceProvider services)
+        public AddCommentsCacheWorker(IConnectionMultiplexer redis, IServiceProvider services, IMapper mapper)
         {
             _redis = redis;
             _services = services;
+            _mapper = mapper;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -56,30 +61,33 @@ namespace Comment.Infrastructure.BackgroundServices
                 .AsNoTracking()
                 .Where(t => t.Id == threadId)
                 .SelectMany(t => t.Comments)
-                    .Include(c => c.User)
                     .Where(c => c.ParentDepth == 0 && !c.IsDeleted && !c.IsBaned);
 
-            List<CommentModel> comments = [];
+            List<CommentViewModel> comments = [];
             switch (sortBy)
             {
                 case SortByEnum.CreateAt:
                     comments = await query.OrderByDescending(c => c.CreatedAt)
                         .Take(_commentsToCache)
+                        .ProjectTo<CommentViewModel>(_mapper.ConfigurationProvider)
                         .ToListAsync(cancellatinToken);
                     break;
                 case SortByEnum.UserName:
                     comments = await query.OrderByDescending(c => c.User.UserName)
                         .Take(_commentsToCache)
+                        .ProjectTo<CommentViewModel>(_mapper.ConfigurationProvider)
                         .ToListAsync(cancellatinToken);
                     break;
                 case SortByEnum.Email:
                     comments = await query.OrderByDescending(c => c.User.Email)
                         .Take(_commentsToCache)
+                        .ProjectTo<CommentViewModel>(_mapper.ConfigurationProvider)
                         .ToListAsync(cancellatinToken);
                     break;
                 default:
                     comments = await query.OrderByDescending(c => c.CreatedAt)
                         .Take(_commentsToCache)
+                        .ProjectTo<CommentViewModel>(_mapper.ConfigurationProvider)
                         .ToListAsync(cancellatinToken);
                     break;
             }
@@ -109,10 +117,10 @@ namespace Comment.Infrastructure.BackgroundServices
                         batch.SortedSetAddAsync(key, comment.Id.ToString(), comment.CreatedAt.Ticks);
                         break;
                     case SortByEnum.UserName:
-                        batch.SortedSetAddAsync(key, comment.Id.ToString(), GetNameScore(comment.User.UserName));
+                        batch.SortedSetAddAsync(key, comment.Id.ToString(), GetNameScore(comment.UserName));
                         break;
                     case SortByEnum.Email:
-                        batch.SortedSetAddAsync(key, comment.Id.ToString(), GetNameScore(comment.User.Email));
+                        batch.SortedSetAddAsync(key, comment.Id.ToString(), GetNameScore(comment.Email));
                         break;
                     default:
                         batch.SortedSetAddAsync(key, comment.Id.ToString(), comment.CreatedAt.Ticks);
