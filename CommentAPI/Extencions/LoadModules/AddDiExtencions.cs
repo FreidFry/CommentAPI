@@ -1,4 +1,5 @@
 ﻿using Comment.Core.Interfaces;
+using Comment.Infrastructure.BackgroundServices;
 using Comment.Infrastructure.Interfaces;
 using Comment.Infrastructure.Services;
 using Comment.Infrastructure.Services.Auth.Login;
@@ -104,6 +105,9 @@ namespace CommentAPI.Extencions.LoadModules
             services.AddSingleton<IHtmlSanitize, HtmlSanitize>();
 
             #endregion
+
+            services.AddHostedService<CommentMigrationWorker>();
+            services.AddHostedService<AddCommentsCacheWorker>();
         }
     }
 }

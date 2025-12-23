@@ -2,13 +2,17 @@
 using Comment.Core.Interfaces;
 using Comment.Core.Persistence;
 using Comment.Infrastructure.CommonDTOs;
-using Comment.Infrastructure.Events;
+using Comment.Infrastructure.Hubs;
 using Comment.Infrastructure.Interfaces;
 using Comment.Infrastructure.Services.Comment.CreateComment.Request;
 using Comment.Infrastructure.Services.Comment.CreateComment.Response;
 using MassTransit;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 using StackExchange.Redis.Extensions.Core.Abstractions;
+using System.Text;
+using System.Text.Json;
 
 namespace Comment.Infrastructure.Services.Comment.CreateComment
 {
@@ -18,15 +22,19 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
         private readonly IImageTransform _imageTransform;
         private readonly IHtmlSanitize _htmlSanitizer;
         private readonly IFileProvider _fileProvider;
-        private readonly IRedisDatabase _redisDatabase;
+        private readonly IDatabase _redisDatabase;
+        private readonly IRedisDatabase _redisCache;
+        private readonly IHubContext<CommentHub> _hubContext;
 
-        public CreateCommentConsumer(AppDbContext appDbContext, IImageTransform imageTransform, IHtmlSanitize htmlSanitizer, IFileProvider fileProvider, IRedisDatabase redisDatabase)
+        public CreateCommentConsumer(AppDbContext appDbContext, IImageTransform imageTransform, IHtmlSanitize htmlSanitizer, IFileProvider fileProvider, IRedisDatabase redisCache, IConnectionMultiplexer connectionMultiplexer, IHubContext<CommentHub> hubContext)
         {
             _appDbContext = appDbContext;
             _imageTransform = imageTransform;
             _htmlSanitizer = htmlSanitizer;
             _fileProvider = fileProvider;
-            _redisDatabase = redisDatabase;
+            _redisCache = redisCache;
+            _redisDatabase = connectionMultiplexer.GetDatabase();
+            _hubContext = hubContext;
         }
 
         public async Task Consume(ConsumeContext<CommentCreateRequestDTO> context)
@@ -73,7 +81,7 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
             if (dto.FileKey != null)
             {
 
-                var fileBytes = await _redisDatabase.GetAsync<byte[]?>(dto.FileKey);
+                var fileBytes = await _redisCache.GetAsync<byte[]?>(dto.FileKey);
 
                 if (fileBytes != null)
                 {
@@ -99,20 +107,50 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
                 }
             }
 
-            await _appDbContext.Comments.AddAsync(comment, context.CancellationToken);
-            await _appDbContext.SaveChangesAsync(context.CancellationToken);
-
             if (parentAuthorId.HasValue && parentAuthorId.Value != user.Id)
-            {
-                await context.Publish(new CommentRepliedEvent(
-                    ParentAuthorId: parentAuthorId.Value,
-                    ReplyAuthorId: user.Id,
-                    ThreadId: thread.Id,
-                    CreatedAt: DateTime.UtcNow
-                ), context.CancellationToken);
-            }
+                await NotifyAboutComment(comment);
+
 
             await context.RespondAsync(new CreateCommentSuccesResponse());
+
+            //send to redis
+
+            string json = JsonSerializer.Serialize(comment);
+
+            string dateIndexKey = $"thread:{comment.ThreadId}:comments:sort:createat";
+            string nameIndexKey = $"thread:{comment.ThreadId}:comments:sort:username";
+
+            await _redisDatabase.StringSetAsync($"comment:{comment.Id}", json);
+
+            await _redisDatabase.SortedSetAddAsync(dateIndexKey, comment.Id.ToString(), comment.CreatedAt.Ticks);
+            double nameScore = GetNameScore(comment.User.UserName);
+            await _redisDatabase.SortedSetAddAsync(nameIndexKey, comment.Id.ToString(), nameScore);
+
+            await _redisDatabase.SortedSetRemoveRangeByRankAsync(dateIndexKey, 0, -76);
+            await _redisDatabase.SortedSetRemoveRangeByRankAsync(nameIndexKey, 0, -76);
+        }
+
+        public async Task NotifyAboutComment(CommentModel comment)
+        {
+            await _hubContext.Clients.Group($"Post_{comment.Id}")
+                .SendAsync("ReceiveComment", comment);
+
+            if (comment.ParentComment?.UserId != null)
+            {
+                await _hubContext.Clients.User(comment.ParentComment.UserId.ToString())
+                    .SendAsync("ReceiveNotification", new
+                    {
+                        title = "Новый ответ",
+                        body = $"{comment.User.UserName} ответил на ваш комментарий",
+                        link = $"/post/{comment.Id}#comment-{comment.Id}"
+                    });
+            }
+        }
+
+        private static double GetNameScore(string name)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(name.ToLower().PadRight(8));
+            return BitConverter.ToDouble(bytes, 0);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Comment.Core.Data;
+using Comment.Infrastructure.Hubs;
 using Comment.Infrastructure.Services.Auth.Login;
 using CommentAPI.Extencions.LoadModules;
 using MassTransit;
@@ -23,6 +24,7 @@ var kestrelConfig = new KestrelConfig(builder.Configuration);
 builder.Services.AddPortConfiguration(builder.WebHost, kestrelConfig);
 
 var apiConfig = new ApiOptions(builder.Configuration);
+
 
 builder.Services.AddRedisCache(apiConfig);
 
@@ -74,6 +76,7 @@ builder.Services.AddSwaggerGen(c => c.EnableAnnotations());
 
 var app = builder.Build();
 
+app.MapHub<CommentHub>("/commentHub");
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();

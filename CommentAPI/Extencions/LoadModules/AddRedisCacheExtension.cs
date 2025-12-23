@@ -36,10 +36,11 @@ namespace CommentAPI.Extencions.LoadModules
             {
                 connectionString += ",abortConnect=false";
             }
+            services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(connectionString));
 
-            services.AddStackExchangeRedisExtensions<SystemTextJsonSerializer>(new RedisConfiguration()
+            services.AddStackExchangeRedisExtensions<SystemTextJsonSerializer>(new RedisConfiguration
             {
-                ConnectionString = connectionString
+                ConnectionString = connectionString,
             });
 
             services.AddStackExchangeRedisCache(options =>
@@ -47,6 +48,12 @@ namespace CommentAPI.Extencions.LoadModules
                 options.Configuration = connectionString;
                 options.InstanceName = apiOptions.RedisCapchaInstanceName;
             });
+            var signalRBuilder = services.AddSignalR();
+            signalRBuilder.AddStackExchangeRedis(connectionString, options =>
+            {
+                options.Configuration.ChannelPrefix = apiOptions.RedisDataInstanceName;
+            });
+
             return services;
         }
 
