@@ -26,7 +26,7 @@ namespace Comment.Infrastructure.BackgroundServices
             {
                 try
                 {
-                    var threadJson = await redisDb.ListRightPopAsync("threads_queue", 30);
+                    var threadJson = await redisDb.ListLeftPopAsync("threads_queue", 30);
 
                     if (threadJson == null || !threadJson.Any())
                     {

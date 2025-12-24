@@ -70,6 +70,30 @@ namespace CommentAPI.Extencions.LoadModules
             TxtStorageUrl = config["S3:txt:StorageUrl"] ?? throw new ArgumentNullException("S3__txt__StorageUrl");
             TxtPublicUrl = config["S3:txt:PublicUrl"] ?? throw new ArgumentNullException("S3__txt__PublicUrl");
             TxtBucketName = config["S3:txt:BucketName"] ?? throw new ArgumentNullException("S3__txt__BucketName");
+
+            var connectionString = RedisConnect;
+
+            if (connectionString.StartsWith("redis://"))
+            {
+                var uriString = connectionString.Replace("redis://", "");
+
+                var atIndex = uriString.LastIndexOf('@');
+
+                if (atIndex != -1)
+                {
+                    var auth = uriString.Substring(0, atIndex).Split(':');
+                    var host = uriString.Substring(atIndex + 1);
+
+                    var user = auth[0];
+                    var pass = auth.Length > 1 ? auth[1] : "";
+
+                    connectionString = $"{host},user={user},password={pass},abortConnect=false";
+                }
+                if (!connectionString.Contains("abortConnect"))
+                    connectionString += ",abortConnect=false";
+
+                RedisConnect = connectionString;
+            }
         }
     }
 }

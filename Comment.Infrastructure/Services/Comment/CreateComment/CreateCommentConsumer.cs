@@ -3,13 +3,11 @@ using Comment.Core.Data;
 using Comment.Core.Interfaces;
 using Comment.Core.Persistence;
 using Comment.Infrastructure.CommonDTOs;
-using Comment.Infrastructure.Hubs;
 using Comment.Infrastructure.Interfaces;
 using Comment.Infrastructure.Services.Comment.CreateComment.Request;
 using Comment.Infrastructure.Services.Comment.CreateComment.Response;
 using Comment.Infrastructure.Services.Comment.DTOs.Response;
 using MassTransit;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 using StackExchange.Redis.Extensions.Core.Abstractions;
@@ -26,10 +24,9 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
         private readonly IFileProvider _fileProvider;
         private readonly IDatabase _redisDatabase;
         private readonly IRedisDatabase _redisCache;
-        private readonly IHubContext<CommentHub> _hubContext;
         private readonly IMapper _mapper;
 
-        public CreateCommentConsumer(AppDbContext appDbContext, IImageTransform imageTransform, IHtmlSanitize htmlSanitizer, IFileProvider fileProvider, IRedisDatabase redisCache, IConnectionMultiplexer connectionMultiplexer, IHubContext<CommentHub> hubContext, IMapper mapper)
+        public CreateCommentConsumer(AppDbContext appDbContext, IImageTransform imageTransform, IHtmlSanitize htmlSanitizer, IFileProvider fileProvider, IRedisDatabase redisCache, IConnectionMultiplexer connectionMultiplexer, IMapper mapper)
         {
             _appDbContext = appDbContext;
             _imageTransform = imageTransform;
@@ -37,7 +34,6 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
             _fileProvider = fileProvider;
             _redisCache = redisCache;
             _redisDatabase = connectionMultiplexer.GetDatabase();
-            _hubContext = hubContext;
             _mapper = mapper;
         }
 
@@ -111,9 +107,6 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
                 }
             }
 
-            if (parentAuthorId.HasValue && parentAuthorId.Value != user.Id)
-                await NotifyAboutComment(comment);
-
 
             await context.RespondAsync(new CreateCommentSuccesResponse());
 
@@ -127,6 +120,29 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
             string nameIndexKey = $"thread:{comment.ThreadId}:comments:sort:username";
 
             var batch = _redisDatabase.CreateBatch();
+
+            if (parentAuthorId.HasValue && parentAuthorId.Value != user.Id)
+            {
+                var parent = await _redisDatabase.StringGetAsync($"comment:{comment.ParentCommentId}");
+                var parentComment = JsonSerializer.Deserialize<CommentViewModel>(parent.ToString());
+                parentComment.CommentCount += 1;
+                batch.StringSetAsync($"comment:{comment.ParentCommentId}", JsonSerializer.Serialize(parentComment), TimeSpan.FromHours(1));
+                var notification = new NotificationModel
+                {
+                    Title = "Ответ на ваш комментарий!",
+                    Message = comment.Content.Length > 50 ? comment.Content.Substring(0, 50) : comment.Content,
+                    CommentId = comment.Id,
+                    Type = "Comment",
+                    CreateAt = comment.CreatedAt,
+                    CreatorId = comment.UserId,
+                    RecipientId = comment.ParentComment!.UserId,
+                    ThreadId = comment.ThreadId
+                };
+
+                batch.ListRightPushAsync("notification_queue", JsonSerializer.Serialize(notification));
+
+            }
+
             batch.ListRightPushAsync("comments_queue", JsonSerializer.Serialize(comment));
 
             batch.StringSetAsync($"comment:{comment.Id}", json);
@@ -139,23 +155,6 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
             batch.SortedSetRemoveRangeByRankAsync(nameIndexKey, 0, -76);
 
             batch.Execute();
-        }
-
-        public async Task NotifyAboutComment(CommentModel comment)
-        {
-            await _hubContext.Clients.Group($"Post_{comment.Id}")
-                .SendAsync("ReceiveComment", comment);
-
-            if (comment.ParentComment?.UserId != null)
-            {
-                await _hubContext.Clients.User(comment.ParentComment.UserId.ToString())
-                    .SendAsync("ReceiveNotification", new
-                    {
-                        title = "Новый ответ",
-                        body = $"{comment.User.UserName} ответил на ваш комментарий",
-                        link = $"/post/{comment.Id}#comment-{comment.Id}"
-                    });
-            }
         }
 
         private static double GetNameScore(string name)

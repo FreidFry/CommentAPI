@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Comment.Core.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251213051355_Initial")]
-    partial class Initial
+    [Migration("20251224235023_InitialFixes")]
+    partial class InitialFixes
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -38,16 +38,28 @@ namespace Comment.Core.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("FileUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ImageTumbnailUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsBaned")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
                     b.Property<Guid?>("ParentCommentId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ThreadId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("ParentDepth")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid?>("ThreadModelId")
+                    b.Property<Guid>("ThreadId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -61,17 +73,73 @@ namespace Comment.Core.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedAt");
+
                     b.HasIndex("ParentCommentId");
 
                     b.HasIndex("ThreadId");
-
-                    b.HasIndex("ThreadModelId");
 
                     b.HasIndex("UserId");
 
                     b.HasIndex("UserModelId");
 
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.HasIndex("ThreadId", "ParentDepth", "CreatedAt")
+                        .HasDatabaseName("IX_Comments_Thread_Depth_Date");
+
                     b.ToTable("Comments", (string)null);
+                });
+
+            modelBuilder.Entity("Comment.Core.Persistence.NotificationModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CommentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreateAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("RecipientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ThreadId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatorId");
+
+                    b.HasIndex("RecipientId");
+
+                    b.HasIndex(new[] { "RecipientId" }, "IX_Notification_Recipient_IsRead");
+
+                    NpgsqlIndexBuilderExtensions.IncludeProperties(b.HasIndex(new[] { "RecipientId" }, "IX_Notification_Recipient_IsRead"), new[] { "IsRead" });
+
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("Comment.Core.Persistence.ThreadModel", b =>
@@ -104,6 +172,8 @@ namespace Comment.Core.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
 
                     b.HasIndex("OwnerId");
 
@@ -159,14 +229,26 @@ namespace Comment.Core.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("UserName")
+                        .IsUnique();
+
                     b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("Comment.Core.Persistence.CommentModel", b =>
                 {
-                    b.HasOne("Comment.Core.Persistence.ThreadModel", null)
+                    b.HasOne("Comment.Core.Persistence.CommentModel", "ParentComment")
+                        .WithMany("Replyes")
+                        .HasForeignKey("ParentCommentId");
+
+                    b.HasOne("Comment.Core.Persistence.ThreadModel", "Thread")
                         .WithMany("Comments")
-                        .HasForeignKey("ThreadModelId");
+                        .HasForeignKey("ThreadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Comment.Core.Persistence.UserModel", "User")
                         .WithMany()
@@ -178,7 +260,22 @@ namespace Comment.Core.Migrations
                         .WithMany("Comments")
                         .HasForeignKey("UserModelId");
 
+                    b.Navigation("ParentComment");
+
+                    b.Navigation("Thread");
+
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Comment.Core.Persistence.NotificationModel", b =>
+                {
+                    b.HasOne("Comment.Core.Persistence.UserModel", "CreatorUser")
+                        .WithMany()
+                        .HasForeignKey("CreatorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatorUser");
                 });
 
             modelBuilder.Entity("Comment.Core.Persistence.ThreadModel", b =>
@@ -190,6 +287,11 @@ namespace Comment.Core.Migrations
                         .IsRequired();
 
                     b.Navigation("OwnerUser");
+                });
+
+            modelBuilder.Entity("Comment.Core.Persistence.CommentModel", b =>
+                {
+                    b.Navigation("Replyes");
                 });
 
             modelBuilder.Entity("Comment.Core.Persistence.ThreadModel", b =>

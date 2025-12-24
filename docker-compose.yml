@@ -1,9 +1,18 @@
 services:
-  commentapi:
+  api:
     image: ${DOCKER_REGISTRY-}commentapi
     build:
       context: .
       dockerfile: CommentAPI/Dockerfile
+    environment:
+      - RUN_MODE=API
     ports:
       - "8080:8080" # HTTP
       - "8081:8081" # HTTPS
+  worker:
+    image: ${DOCKER_REGISTRY-}commentapi
+    build:
+      context: .
+      dockerfile: CommentAPI/Dockerfile
+    environment:
+      - RUN_MODE=Worker

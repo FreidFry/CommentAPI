@@ -8,11 +8,39 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var runMode = Environment.GetEnvironmentVariable("RUN_MODE") ?? "All";
+
 builder.Configuration.AddEnvironmentVariables();
 builder.Services.Configure<ApiOptions>(builder.Configuration);
 builder.Services.Configure<JwtOptions>(builder.Configuration);
 builder.Services.Configure<KestrelConfig>(builder.Configuration);
+var jwtOptions = new JwtOptions(builder.Configuration);
+var apiConfig = new ApiOptions(builder.Configuration);
 
+builder.Services.SetupSignalR(apiConfig);
+if (runMode == "API" || runMode == "All")
+{
+    builder.Services.AddControllers().AddJsonOptions(c => c.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+    builder.Services.AddJwtAuthentication(jwtOptions);
+    builder.Services.AddResponseCompression(options =>
+    {
+        options.EnableForHttps = true;
+        options.MimeTypes = ["text/plain", "text/css", "application/javascript", "application/json", "image/svg+xml"];
+    });
+}
+builder.Services.AddMassTransit(x =>
+{
+    if (runMode == "Worker" || runMode == "All")
+    {
+        x.AddConsumers(typeof(LoginConsumer).Assembly);
+    }
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(new Uri(apiConfig.RabbitMqConnect));
+
+        cfg.ConfigureEndpoints(context);
+    });
+});
 builder.Services.AddRouting(options =>
 {
     options.LowercaseUrls = true;
@@ -22,35 +50,14 @@ builder.Services.AddRouting(options =>
 var kestrelConfig = new KestrelConfig(builder.Configuration);
 builder.Services.AddPortConfiguration(builder.WebHost, kestrelConfig);
 
-var apiConfig = new ApiOptions(builder.Configuration);
 
 
 builder.Services.AddRedisCache(apiConfig);
-
-builder.Services.AddMassTransit(x =>
-{
-    x.AddConsumers(typeof(LoginConsumer).Assembly);
-    x.UsingRabbitMq((context, cfg) =>
-    {
-        cfg.Host(new Uri(apiConfig.RabbitMqConnect));
-
-        cfg.ConfigureEndpoints(context);
-    });
-});
-builder.Services.AddResponseCompression(options =>
-{
-    options.EnableForHttps = true;
-    options.MimeTypes = ["text/plain", "text/css", "application/javascript", "application/json", "image/svg+xml"];
-});
-
-builder.Services.AddControllers().AddJsonOptions(c => c.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddAutoMapperModule();
 builder.Services.AddDipedencyInjections();
 
 
-var jwtOptions = new JwtOptions(builder.Configuration);
-builder.Services.AddJwtAuthentication(jwtOptions);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -70,31 +77,28 @@ builder.Services.AddLogging(builder =>
     .AddDebug()
 );
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c => c.EnableAnnotations());
 
 var app = builder.Build();
 
-app.MapHub<CommentHub>("/commentHub");
-using (var scope = app.Services.CreateScope())
+
+if (runMode == "API" || runMode == "All")
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    dbContext.Database.Migrate();
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        dbContext.Database.Migrate();
+    }
 }
-
-app.UseCors("AllowAll");
-
-if (app.Environment.IsDevelopment())
+if (runMode == "API" || runMode == "All")
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseCors("AllowAll");
+
+    app.UseHttpsRedirection();
+
+    app.UseAuthentication();
+    app.UseAuthorization();
+
+    app.MapControllers();
+    app.MapHub<NotificationHub>("/notificationHub");
 }
-
-app.UseHttpsRedirection();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-
 app.Run();

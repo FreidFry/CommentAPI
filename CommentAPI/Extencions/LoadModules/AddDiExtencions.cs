@@ -15,6 +15,9 @@ using Comment.Infrastructure.Services.Comment.GetCommentsByThread;
 using Comment.Infrastructure.Services.Comment.GetReply;
 using Comment.Infrastructure.Services.Comment.UpdateComment;
 using Comment.Infrastructure.Services.Comment.UpdateComment.Request;
+using Comment.Infrastructure.Services.Notification.GetHistory;
+using Comment.Infrastructure.Services.Notification.MarkAllRead;
+using Comment.Infrastructure.Services.Notification.MarkRead;
 using Comment.Infrastructure.Services.Thread.CreateThread;
 using Comment.Infrastructure.Services.Thread.CreateThread.Request;
 using Comment.Infrastructure.Services.Thread.DeleteThread;
@@ -37,6 +40,8 @@ namespace CommentAPI.Extencions.LoadModules
     {
         public static void AddDipedencyInjections(this IServiceCollection services)
         {
+            var runMode = Environment.GetEnvironmentVariable("RUN_MODE") ?? "All";
+
             services.AddSingleton<IJwtOptions>(sp =>
             {
                 var jwtOptions = sp.GetRequiredService<IConfiguration>();
@@ -52,37 +57,43 @@ namespace CommentAPI.Extencions.LoadModules
 
             #region Services
 
-            services.AddScoped<IImageTransform, ImageTransform>();
-            services.AddScoped<IJwtProvider, JwtProvider>();
+            if (runMode == "Worker" || runMode == "All") services.AddScoped<IImageTransform, ImageTransform>();
+            if (runMode == "API" || runMode == "All") services.AddScoped<IJwtProvider, JwtProvider>();
 
             #endregion
 
             #region Handlers
 
-            services.AddScoped<ILoginHandler, LoginHandler>();
-            services.AddScoped<IRegisterHandler, RegisterHandler>();
-            services.AddScoped<ILogoutHandler, LogoutHandler>();
+            if (runMode == "API" || runMode == "All")
+            {
+                services.AddScoped<ILoginHandler, LoginHandler>();
+                services.AddScoped<IRegisterHandler, RegisterHandler>();
+                services.AddScoped<ILogoutHandler, LogoutHandler>();
 
-            services.AddScoped<ICreateCommentHandler, CreateCommentHandler>();
-            services.AddScoped<IGetCommentsByThreadHandler, GetCommentsByThreadHandler>();
-            services.AddScoped<IUpdateCommentHandler, UpdateCommentHandler>();
-            services.AddScoped<IDeleteCommentHandler, DeleteCommentHandler>();
-            services.AddScoped<IGetReplyHandler, GetReplyHandler>();
+                services.AddScoped<ICreateCommentHandler, CreateCommentHandler>();
+                services.AddScoped<IGetCommentsByThreadHandler, GetCommentsByThreadHandler>();
+                services.AddScoped<IUpdateCommentHandler, UpdateCommentHandler>();
+                services.AddScoped<IDeleteCommentHandler, DeleteCommentHandler>();
+                services.AddScoped<IGetReplyHandler, GetReplyHandler>();
 
-            services.AddScoped<ICreateThreadHandler, CreateThreadHandler>();
-            services.AddScoped<IRestoreThreadHandler, RestoreThreadHandler>();
-            services.AddScoped<IUpdateThreadHandler, UpdateThreadHandler>();
-            services.AddScoped<IDeleteThreadHandler, DeleteThreadHandler>();
-            services.AddScoped<IGetDetailedThreadHandler, GetDetailedThreadHandler>();
-            services.AddScoped<IGetThreadTreeHandler, GetThreadTreeHandler>();
+                services.AddScoped<ICreateThreadHandler, CreateThreadHandler>();
+                services.AddScoped<IRestoreThreadHandler, RestoreThreadHandler>();
+                services.AddScoped<IUpdateThreadHandler, UpdateThreadHandler>();
+                services.AddScoped<IDeleteThreadHandler, DeleteThreadHandler>();
+                services.AddScoped<IGetDetailedThreadHandler, GetDetailedThreadHandler>();
+                services.AddScoped<IGetThreadTreeHandler, GetThreadTreeHandler>();
 
-            services.AddScoped<IGetProfileHandler, GetProfileHandler>();
+                services.AddScoped<IGetProfileHandler, GetProfileHandler>();
 
-            services.AddScoped<ICapchaGenerateHandler, CapchaGenerateHandler>();
-            services.AddScoped<ICaptchaValidateHandler,  CaptchaValidateHandler>();
+                services.AddScoped<ICapchaGenerateHandler, CapchaGenerateHandler>();
+                services.AddScoped<ICaptchaValidateHandler, CaptchaValidateHandler>();
 
-            #endregion
+                services.AddScoped<IAllNotificationmarkReadHandler, AllNotificationmarkReadHandler>();
+                services.AddScoped<INotificationMarkReadHandler, NotificationMarkReadHandler>();
+                services.AddScoped<IGetNotificationHistoryHandler, GetNotificationHistoryHandler>();
 
+                #endregion
+            }
             #region Validators
 
             services.AddScoped<IValidator<CommentCreateRequest>, CommentCreateValidator>();
@@ -101,15 +112,19 @@ namespace CommentAPI.Extencions.LoadModules
             #region Utils
 
             services.AddScoped<IPasswordHasher, PassworHasher>();
-            services.AddSingleton<IFileProvider, FileProvider>();
             services.AddSingleton<IHtmlSanitize, HtmlSanitize>();
 
-            #endregion
+            if (runMode == "Worker" || runMode == "All") services.AddSingleton<IFileProvider, FileProvider>();
 
-            services.AddHostedService<ThreadCacheWorker>();
-            services.AddHostedService<CommentsCacheWorker>();
-            services.AddHostedService<CommentMigrationWorker>();
-            services.AddHostedService<ThreadMigrationWorker>();
+            #endregion
+            if (runMode == "Worker" || runMode == "All")
+            {
+                services.AddHostedService<ThreadCacheWorker>();
+                services.AddHostedService<CommentsCacheWorker>();
+                services.AddHostedService<CommentMigrationWorker>();
+                services.AddHostedService<ThreadMigrationWorker>();
+                services.AddHostedService<NotificationMigrationWorker>();
+            }
         }
     }
 }

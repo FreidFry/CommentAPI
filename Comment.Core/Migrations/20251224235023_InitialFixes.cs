@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Comment.Core.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class InitialFixes : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -31,6 +31,32 @@ namespace Comment.Core.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Notifications",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RecipientId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CommentId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ThreadId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Title = table.Column<string>(type: "text", nullable: false),
+                    Message = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    CreateAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsRead = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notifications", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Notifications_Users_CreatorId",
+                        column: x => x.CreatorId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -66,20 +92,30 @@ namespace Comment.Core.Migrations
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    IsBaned = table.Column<bool>(type: "boolean", nullable: false),
                     ThreadId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ImageUrl = table.Column<string>(type: "text", nullable: true),
+                    ImageTumbnailUrl = table.Column<string>(type: "text", nullable: true),
+                    FileUrl = table.Column<string>(type: "text", nullable: true),
                     ParentCommentId = table.Column<Guid>(type: "uuid", nullable: true),
+                    ParentDepth = table.Column<int>(type: "integer", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ThreadModelId = table.Column<Guid>(type: "uuid", nullable: true),
                     UserModelId = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Comments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Comments_Threads_ThreadModelId",
-                        column: x => x.ThreadModelId,
-                        principalTable: "Threads",
+                        name: "FK_Comments_Comments_ParentCommentId",
+                        column: x => x.ParentCommentId,
+                        principalTable: "Comments",
                         principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Comments_Threads_ThreadId",
+                        column: x => x.ThreadId,
+                        principalTable: "Threads",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Comments_Users_UserId",
                         column: x => x.UserId,
@@ -94,9 +130,19 @@ namespace Comment.Core.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Comments_CreatedAt",
+                table: "Comments",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Comments_ParentCommentId",
                 table: "Comments",
                 column: "ParentCommentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Comments_Thread_Depth_Date",
+                table: "Comments",
+                columns: new[] { "ThreadId", "ParentDepth", "CreatedAt" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Comments_ThreadId",
@@ -104,14 +150,14 @@ namespace Comment.Core.Migrations
                 column: "ThreadId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Comments_ThreadModelId",
-                table: "Comments",
-                column: "ThreadModelId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Comments_UserId",
                 table: "Comments",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Comments_UserId_CreatedAt",
+                table: "Comments",
+                columns: new[] { "UserId", "CreatedAt" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Comments_UserModelId",
@@ -119,9 +165,42 @@ namespace Comment.Core.Migrations
                 column: "UserModelId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Notification_Recipient_IsRead",
+                table: "Notifications",
+                column: "RecipientId")
+                .Annotation("Npgsql:IndexInclude", new[] { "IsRead" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notifications_CreatorId",
+                table: "Notifications",
+                column: "CreatorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notifications_RecipientId",
+                table: "Notifications",
+                column: "RecipientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Threads_CreatedAt",
+                table: "Threads",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Threads_OwnerId",
                 table: "Threads",
                 column: "OwnerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_Email",
+                table: "Users",
+                column: "Email",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_UserName",
+                table: "Users",
+                column: "UserName",
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -129,6 +208,9 @@ namespace Comment.Core.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Comments");
+
+            migrationBuilder.DropTable(
+                name: "Notifications");
 
             migrationBuilder.DropTable(
                 name: "Threads");

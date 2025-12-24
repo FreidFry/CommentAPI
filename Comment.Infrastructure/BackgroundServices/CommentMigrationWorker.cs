@@ -1,6 +1,8 @@
 ﻿using Comment.Core.Data;
 using Comment.Core.Persistence;
+using Comment.Infrastructure.Services.Comment.DTOs.Response;
 using Comment.Infrastructure.Services.Thread.DTOs;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using StackExchange.Redis;
@@ -43,7 +45,8 @@ namespace Comment.Infrastructure.BackgroundServices
                         foreach (var json in commentsJson)
                         {
                             var comment = JsonSerializer.Deserialize<CommentModel>(json.ToString());
-                            if (comment != null) newComments.Add(comment);
+                            if (comment != null)
+                                newComments.Add(comment);
                         }
                         if (newComments.Any())
                         {
@@ -62,6 +65,18 @@ namespace Comment.Infrastructure.BackgroundServices
                 {
                     await Task.Delay(5000, stoppingToken);
                 }
+            }
+        }
+
+        private async Task IncrementCommentsCount(IDatabase db, Guid threadId, int count)
+        {
+            var key = $"thread:{threadId}:details";
+            var json = await db.StringGetAsync(key);
+            if (!json.IsNull)
+            {
+                var preview = JsonSerializer.Deserialize<ThreadsResponseViewModel>(json.ToString());
+                preview.CommentCount += count;
+                await db.StringSetAsync(key, JsonSerializer.Serialize(preview), TimeSpan.FromHours(1));
             }
         }
 
