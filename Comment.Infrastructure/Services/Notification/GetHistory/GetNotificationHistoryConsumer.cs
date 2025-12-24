@@ -26,7 +26,6 @@ namespace Comment.Infrastructure.Services.Notification.GetHistory
                 .OrderByDescending(n => n.CreateAt)
                 .ProjectTo<NotificationViewModel>(_mapper.ConfigurationProvider)
                 .ToListAsync(context.CancellationToken);
-            notifications.Add(new NotificationViewModel(Guid.NewGuid(), "testc", "testc", "testc", DateTime.Now, "test", "test", Guid.NewGuid(), Guid.NewGuid(), false));
 
             await context.RespondAsync(new GetNotificationResponse(notifications));
         }
