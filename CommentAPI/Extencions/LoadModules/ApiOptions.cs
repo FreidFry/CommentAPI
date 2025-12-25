@@ -13,6 +13,8 @@ namespace CommentAPI.Extencions.LoadModules
         public string DbPassword { get; }
         public string DbServer { get; }
         public string DbPort { get; }
+        public string DbSSLMode { get; }
+        public string DbTrustServCert { get; }
 
         #endregion
 
@@ -52,13 +54,17 @@ namespace CommentAPI.Extencions.LoadModules
             DbPassword = config["DB:Password"] ?? throw new ArgumentNullException("DB__Password");
             DbServer = config["DB:Server"] ?? throw new ArgumentNullException("DB__Server");
             DbPort = config["DB:Port"] ?? "5432";
+            DbSSLMode = config["DB:SSLMODE"] ?? throw new ArgumentNullException("DB__SSLMODE");
+            if ("true".Equals(config["DB:TrustServerCertificate"] ?? throw new ArgumentNullException("DB__TrustServerCertificate"), StringComparison.OrdinalIgnoreCase))
+                DbTrustServCert = "true";
+            else DbTrustServCert = "false";
 
             RabbitMqConnect = config["RabbitMq:ConnectString"] ?? throw new ArgumentNullException("RabbitMq__ConnectString");
             RedisConnect = config["Redis:ConnectString"] ?? throw new ArgumentNullException("Redis__ConnectString");
             RedisDataInstanceName = config["Redis:DataInstanceName"] ?? throw new ArgumentNullException("Redis__DataInstanceName");
             RedisCapchaInstanceName = config["Redis:CapchaInstanceName"] ?? throw new ArgumentNullException("Redis__CapchaInstanceName");
 
-            DbConnection = $"Server={DbServer};Port={DbPort};Database={DbName};Username={DbUser};Password={DbPassword}";
+            DbConnection = $"Server={DbServer};Port={DbPort};Database={DbName};Username={DbUser};Password={DbPassword};SSL Mode={DbSSLMode};Trust Server Certificate={DbTrustServCert}";
 
             ImageAccessKeyId = config["S3:image:AccessKeyId"] ?? throw new ArgumentNullException("S3__Image__AccessKeyId");
             ImageSecretAccessKey = config["S3:image:SecretAccessKey"] ?? throw new ArgumentNullException("S3__Image__SecretAccessKey");
@@ -87,7 +93,7 @@ namespace CommentAPI.Extencions.LoadModules
                     var user = auth[0];
                     var pass = auth.Length > 1 ? auth[1] : "";
 
-                    connectionString = $"{host},user={user},password={pass},abortConnect=false";
+                    connectionString = $"{host},user={user},password={pass},abortConnect=false,";
                 }
                 if (!connectionString.Contains("abortConnect"))
                     connectionString += ",abortConnect=false";
