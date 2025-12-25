@@ -64,7 +64,7 @@ namespace CommentAPI.Extencions.LoadModules
             RedisDataInstanceName = config["Redis:DataInstanceName"] ?? throw new ArgumentNullException("Redis__DataInstanceName");
             RedisCapchaInstanceName = config["Redis:CapchaInstanceName"] ?? throw new ArgumentNullException("Redis__CapchaInstanceName");
 
-            DbConnection = $"Server={DbServer};Port={DbPort};Database={DbName};Username={DbUser};Password={DbPassword};SSL Mode={DbSSLMode};Trust Server Certificate={DbTrustServCert}";
+            DbConnection = $"Host={DbServer};Port={DbPort};Database={DbName};Username={DbUser};Password={DbPassword};SSL Mode={DbSSLMode};Trust Server Certificate={DbTrustServCert}";
 
             ImageAccessKeyId = config["S3:image:AccessKeyId"] ?? throw new ArgumentNullException("S3__Image__AccessKeyId");
             ImageSecretAccessKey = config["S3:image:SecretAccessKey"] ?? throw new ArgumentNullException("S3__Image__SecretAccessKey");
