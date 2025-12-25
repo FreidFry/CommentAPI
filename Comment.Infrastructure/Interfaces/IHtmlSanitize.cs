@@ -3,5 +3,6 @@
     public interface IHtmlSanitize
     {
         string Sanitize(string html);
+        bool HasTextContent(string html);
     }
 }

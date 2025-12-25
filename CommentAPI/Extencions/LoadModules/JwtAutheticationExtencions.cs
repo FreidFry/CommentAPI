@@ -20,11 +20,18 @@ namespace CommentAPI.Extencions.LoadModules
                 {
                     OnMessageReceived = context =>
                     {
-                        var token = context.HttpContext.Request.Cookies["jwt"];
-                        if (token != null)
-                        {
-                            context.Token = token;
-                        }
+
+                        var accessToken = context.Request.Cookies["jwt"];
+
+                        if (string.IsNullOrEmpty(accessToken))
+                            accessToken = context.Request.Query["access_token"];
+
+                        var path = context.HttpContext.Request.Path;
+
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/notificationHub"))
+                            context.Token = accessToken;
+                        else if (!string.IsNullOrEmpty(accessToken))
+                            context.Token = accessToken;
                         return Task.CompletedTask;
                     }
                 };

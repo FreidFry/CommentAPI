@@ -59,6 +59,12 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
                 return;
             }
 
+            if (_htmlSanitizer.HasTextContent(dto.Content))
+            {
+                await context.RespondAsync(new StatusCodeResponse("The comment must contain plain text.", 400));
+                return;
+            }
+
             var comment = new CommentModel(_htmlSanitizer.Sanitize(dto.Content), user, thread);
 
             Guid? parentAuthorId = null;
@@ -131,7 +137,7 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
                 {
                     Title = "Ответ на ваш комментарий!",
                     Message = comment.Content.Length > 50 ? comment.Content.Substring(0, 50) : comment.Content,
-                    CommentId = comment.Id,
+                    CommentId = (Guid)comment.ParentCommentId!,
                     Type = "Comment",
                     CreateAt = comment.CreatedAt,
                     CreatorId = comment.UserId,

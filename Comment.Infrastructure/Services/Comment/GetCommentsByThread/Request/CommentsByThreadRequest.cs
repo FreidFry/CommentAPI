@@ -12,8 +12,9 @@ namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread.Request
         {
             get => Enum.TryParse<SortByEnum>(SortBy, true, out var result) ? result : SortByEnum.CreateAt;
         }
-        public bool IsAscending { get; set; }
+        public bool IsAscending { get; set; } = false;
         public string? After { get; set; }
         public int Limit { get; set; } = 25;
+        public Guid? FocusCommentId { get; set; }
     }
 }

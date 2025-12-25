@@ -1,12 +1,12 @@
 ﻿using Comment.Infrastructure.Services.Comment.GetCommentsByThread.Request;
 using Comment.Infrastructure.Services.Comment.GetCommentsByThread.Response;
+using Comment.Infrastructure.Wrappers;
 using MassTransit;
 using Microsoft.AspNetCore.Mvc;
-using StackExchange.Redis;
 
 namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread
 {
-    public class GetCommentsByThreadHandler : IGetCommentsByThreadHandler
+    public class GetCommentsByThreadHandler : HandlerWrapper, IGetCommentsByThreadHandler
     {
         private readonly IRequestClient<CommentsByThreadRequestDTO> _client;
         public GetCommentsByThreadHandler(IRequestClient<CommentsByThreadRequestDTO> client)
@@ -15,14 +15,14 @@ namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread
         }
 
         public async Task<IActionResult> Handle(Guid threadId, CommentsByThreadRequest request, CancellationToken cancellationToken)
+        => await SafeExecute(async () =>
         {
             var dto = new CommentsByThreadRequestDTO(threadId, request);
             var response = await _client.GetResponse<CommentsByThreadRequestDTO, CommentsListResponse>(dto, cancellationToken);
 
             if (response.Is(out Response<CommentsListResponse> comments))
                 return new OkObjectResult(comments.Message);
-
-            return new StatusCodeResult(500);
-        }
+            return new ObjectResult(new { error = "Unexpected service response" }) { StatusCode = 502 };
+        });
     }
 }

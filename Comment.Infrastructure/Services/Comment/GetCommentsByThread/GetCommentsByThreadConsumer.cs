@@ -18,7 +18,9 @@ namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread
         private readonly IMapper _mapper;
         private readonly IDatabase _dataBase;
 
-        public GetCommentsByThreadConsumer(AppDbContext appDbContext, IMapper mapper, IConnectionMultiplexer connectionMultiplexer)
+        public GetCommentsByThreadConsumer(AppDbContext appDbContext, IMapper mapper
+            , IConnectionMultiplexer connectionMultiplexer
+            )
         {
             _appDbContext = appDbContext;
             _mapper = mapper;
@@ -29,7 +31,40 @@ namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread
         {
             var request = context.Message;
             var cancellationToken = context.CancellationToken;
+            var finalComments = new List<CommentViewModel>();
+            if (request.FocusCommentId != null)
+            {
+                finalComments = await GetWithFocus(request, cancellationToken);
+                await context.RespondAsync(new CommentsListResponse { Items = finalComments, HasMore = true });
+            }
 
+            finalComments = await GetWithoutFocus(request, cancellationToken);
+
+            bool HasMore = false;
+            if (finalComments.Count > request.Limit)
+            {
+                HasMore = true;
+                finalComments.RemoveAt(request.Limit);
+            }
+
+            string? nextCursor = null;
+            if (HasMore)
+            {
+                var last = finalComments.Last();
+                nextCursor = request.SortByEnum switch
+                {
+                    SortByEnum.Email => last.Email,
+                    SortByEnum.UserName => last.UserName,
+                    SortByEnum.CreateAt => last.CreatedAt.ToString("O"),
+                    _ => last.CreatedAt.ToString("O")
+                };
+            }
+
+            await context.RespondAsync(new CommentsListResponse { Items = finalComments, NextCursor = nextCursor, HasMore = HasMore });
+        }
+
+        private async Task<List<CommentViewModel>> GetWithoutFocus(CommentsByThreadRequestDTO request, CancellationToken cancellationToken)
+        {
             var paginatedLimit = request.Limit + 1;
 
             string sortKey = request.SortByEnum.ToString().ToLower();
@@ -60,32 +95,43 @@ namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread
                     ? GetCursorFromItem(finalComments.Last(), request.SortByEnum)
                     : request.After;
 
-                var dbComments = await GetFromDb(request, effectiveAfter, needed, context.CancellationToken);
+                var dbComments = await GetFromDb(request, effectiveAfter, needed, cancellationToken);
 
                 finalComments.AddRange(dbComments);
             }
 
-            bool HasMore = false;
-            if (finalComments.Count > request.Limit)
-            {
-                HasMore = true;
-                finalComments.RemoveAt(request.Limit);
-            }
+            return finalComments;
+        }
 
-            string? nextCursor = null;
-            if (HasMore)
-            {
-                var last = finalComments.Last();
-                nextCursor = request.SortByEnum switch
-                {
-                    SortByEnum.Email => last.Email,
-                    SortByEnum.UserName => last.UserName,
-                    SortByEnum.CreateAt => last.CreatedAt.ToString("O"),
-                    _ => last.CreatedAt.ToString("O")
-                };
-            }
+        private async Task<List<CommentViewModel>> GetWithFocus(CommentsByThreadRequestDTO request, CancellationToken cancellationToken)
+        {
+            var focusEntity = await _appDbContext.Comments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == request.FocusCommentId, cancellationToken);
 
-            await context.RespondAsync(new CommentsListResponse { Items = finalComments, NextCursor = nextCursor, HasMore = HasMore });
+            if (focusEntity == null) return new List<CommentViewModel>();
+
+            var rootId = focusEntity.ParentCommentId ?? focusEntity.Id;
+
+            var rootComment = await _appDbContext.Comments
+                .AsNoTracking()
+                .Where(c => c.Id == rootId)
+                .ProjectTo<CommentViewModel>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (rootComment == null) return new List<CommentViewModel>();
+
+            var replies = await _appDbContext.Comments
+                .AsNoTracking()
+                .Where(c => c.ParentCommentId == rootId && c.CreatedAt >= focusEntity.CreatedAt)
+                .OrderBy(c => c.CreatedAt)
+                .Take(5)
+                .ProjectTo<CommentViewModel>(_mapper.ConfigurationProvider)
+                .ToListAsync(cancellationToken);
+
+            rootComment.Replies = replies;
+
+            return [rootComment];
         }
 
         private async Task<List<CommentViewModel>> GetFromDb(CommentsByThreadRequestDTO request, string after, int need, CancellationToken cancellationToken)

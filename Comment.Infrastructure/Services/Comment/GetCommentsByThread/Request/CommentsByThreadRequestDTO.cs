@@ -9,6 +9,7 @@ namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread.Request
         public bool IsAscending { get; set; }
         public string? After { get; set; }
         public int Limit { get; set; }
+        public Guid? FocusCommentId { get; set; }
 
         public CommentsByThreadRequestDTO(Guid guid, CommentsByThreadRequest request)
         {
@@ -17,6 +18,7 @@ namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread.Request
             IsAscending = request.IsAscending;
             After = request.After;
             Limit = request.Limit;
+            FocusCommentId = request.FocusCommentId;
         }
 
         public CommentsByThreadRequestDTO() { }

@@ -21,7 +21,6 @@ namespace CommentAPI.Controllers
         private readonly IDeleteCommentHandler _deleteCommentHandler;
         private readonly IGetReplyHandler _getReplyHandler;
 
-
         public CommentController(ICreateCommentHandler createCommentHandler, IUpdateCommentHandler updateCommentHandler, IDeleteCommentHandler deleteCommentHandler, IGetReplyHandler getReplyHandler)
         {
             _createCommentHandler = createCommentHandler;

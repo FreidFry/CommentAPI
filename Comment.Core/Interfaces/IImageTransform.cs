@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-
-namespace Comment.Core.Interfaces
+﻿namespace Comment.Core.Interfaces
 {
     public interface IImageTransform
     {
