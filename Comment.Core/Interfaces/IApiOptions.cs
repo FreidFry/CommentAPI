@@ -17,7 +17,5 @@
         string RedisConnect { get; }
         string RedisDataInstanceName { get; }
         string RedisCapchaInstanceName { get; }
-        string DbSSLMode { get; }
-        string DbTrustServCert { get; }
     }
 }
