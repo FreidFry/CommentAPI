@@ -7,13 +7,14 @@ using Comment.Infrastructure.Wrappers;
 using MassTransit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Comment.Infrastructure.Services.Thread.GetDetailedThread
 {
     public class GetDetailedThreadHandler : HandlerWrapper, IGetDetailedThreadHandler
     {
         private readonly IRequestClient<ThreadDetaliRequestDTO> _client;
-        public GetDetailedThreadHandler(IRequestClient<ThreadDetaliRequestDTO> client)
+        public GetDetailedThreadHandler(IRequestClient<ThreadDetaliRequestDTO> client, ILogger<GetDetailedThreadHandler> _logger) : base(_logger)
         {
             _client = client;
         }
@@ -27,12 +28,17 @@ namespace Comment.Infrastructure.Services.Thread.GetDetailedThread
 
            if (response.Is(out Response<DetailedThreadResponse> tree)) return new OkObjectResult(tree.Message);
            if (response.Is(out Response<JsonResponse> json)) return new OkObjectResult(json.Message.json);
-           if (response.Is(out Response<StatusCodeResponse> StatusCode)) return new ObjectResult(new { StatusCode.Message.Message })
+           if (response.Is(out Response<StatusCodeResponse> statusCode))
            {
-               StatusCode = StatusCode.Message.StatusCode
-           };
+               _logger.LogWarning("Could not retrieve thread {ThreadId}. Service returned {Code}: {Message}",
+                   request.ThreadId, statusCode.Message.StatusCode, statusCode.Message.Message);
+               return new ObjectResult(new { statusCode.Message.Message })
+               {
+                   StatusCode = statusCode.Message.StatusCode
+               };
+           }
 
            return new ObjectResult(new { error = "Unexpected service response" }) { StatusCode = 502 };
-       });
+       }, "GetDetailedThread", new { request.ThreadId });
     }
 }

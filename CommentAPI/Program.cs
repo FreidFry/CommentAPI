@@ -4,6 +4,7 @@ using Comment.Infrastructure.Services.Auth.Login;
 using CommentAPI.Extencions.LoadModules;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +21,8 @@ var apiConfig = new ApiOptions(builder.Configuration);
 builder.Services.SetupSignalR(apiConfig);
 if (runMode == "API" || runMode == "All")
 {
+    builder.AddSirilogLogger();
+
     builder.Services.AddControllers().AddJsonOptions(c => c.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
     builder.Services.AddJwtAuthentication(jwtOptions);
     builder.Services.AddResponseCompression(options =>
@@ -83,6 +86,7 @@ var app = builder.Build();
 
 if (runMode == "API" || runMode == "All")
 {
+    app.UseSerilogRequestLogging();
     using (var scope = app.Services.CreateScope())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();

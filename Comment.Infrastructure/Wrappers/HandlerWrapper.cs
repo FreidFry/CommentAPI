@@ -1,27 +1,55 @@
 ﻿using MassTransit;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace Comment.Infrastructure.Wrappers
 {
     public abstract class HandlerWrapper
     {
-        protected async Task<IActionResult> SafeExecute(Func<Task<IActionResult>> action)
+        protected readonly ILogger<HandlerWrapper> _logger;
+
+        protected HandlerWrapper(ILogger<HandlerWrapper> logger)
         {
-            try
+            _logger = logger;
+        }
+
+        protected async Task<IActionResult> SafeExecute(Func<Task<IActionResult>> action, string actionName, object? requestData = null)
+        {
+            using (_logger.BeginScope(new Dictionary<string, object> { ["ActionName"] = actionName, ["RequestData"] = requestData ?? "none"}))
             {
-                return await action();
-            }
-            catch (RequestTimeoutException)
-            {
-                return new ObjectResult(new { error = "Service timeout" }) { StatusCode = 504 };
-            }
-            catch (OperationCanceledException)
-            {
-                return new StatusCodeResult(499);
-            }
-            catch (Exception ex)
-            {
-                return new ObjectResult(new { error = "Internal error", details = ex.Message }) { StatusCode = 500 };
+                var sw = Stopwatch.StartNew();
+                try
+                {
+                    var result = await action();
+                    sw.Stop();
+
+                    if (sw.ElapsedMilliseconds > 500)
+                        _logger.LogWarning("Slow Action {ActionName} completed in {ElapsedMS}ms", actionName, sw.ElapsedMilliseconds);
+                    else
+                        _logger.LogDebug("Action {ActionName} completed in {ElapsedMS}ms", actionName, sw.ElapsedMilliseconds);
+
+                    return result;
+                }
+                catch (RequestTimeoutException ex)
+                {
+                    sw.Stop();
+                    _logger.LogError(ex, "MassTransit Timeout in {ActionName} after {ElapsedMS}ms", actionName, sw.ElapsedMilliseconds);
+                    return new ObjectResult(new { error = "Service timeout" }) { StatusCode = 504 };
+                }
+                catch (OperationCanceledException)
+                {
+                    sw.Stop();
+                    _logger.LogWarning("Action {ActionName} was cancelled by user (Client Closed Connection)", actionName);
+                    return new StatusCodeResult(499);
+                }
+                catch (Exception ex)
+                {
+                    sw.Stop();
+                    var traceId = Activity.Current?.Id ?? "n/a";
+                    _logger.LogError(ex, "Unhandled Exception in {ActionName} | TraceId: {TraceId}", actionName, traceId);
+                    return new ObjectResult(new { error = "Internal error", details = ex.Message }) { StatusCode = 500 };
+                }
             }
         }
     }

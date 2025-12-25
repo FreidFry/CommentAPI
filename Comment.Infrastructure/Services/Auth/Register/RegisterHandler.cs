@@ -5,6 +5,7 @@ using Comment.Infrastructure.Wrappers;
 using MassTransit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using static Comment.Infrastructure.Extensions.CookieExtensions;
 
 namespace Comment.Infrastructure.Services.Auth.Register
@@ -15,7 +16,7 @@ namespace Comment.Infrastructure.Services.Auth.Register
         private readonly IJwtOptions _jwtOptions;
         private readonly IRequestClient<UserRegisterRequest> _client;
 
-        public RegisterHandler(IJwtProvider jwtProvider, IJwtOptions jwtOptions, IRequestClient<UserRegisterRequest> client)
+        public RegisterHandler(IJwtProvider jwtProvider, IJwtOptions jwtOptions, IRequestClient<UserRegisterRequest> client, ILogger<RegisterHandler> _logger) : base(_logger)
         {
             _jwtProvider = jwtProvider;
             _jwtOptions = jwtOptions;
@@ -33,10 +34,16 @@ namespace Comment.Infrastructure.Services.Auth.Register
                 var data = sucess.Message;
                 SetJwtCookie(httpContext, data.UserModel, _jwtProvider, _jwtOptions);
 
+                _logger.LogInformation("New user registered: {Email} (ID: {UserId})", request.Email, data.Id);
+
                 return new OkObjectResult(new { data.Id, data.UserName, data.Roles });
             }
-            if (response.Is(out Response<ConflictRegisterResponse> error)) return new ConflictObjectResult(error.Message.msg);
+            if (response.Is(out Response<ConflictRegisterResponse> error))
+            {
+                _logger.LogWarning("Registration conflict for {Email}: {Reason}", request.Email, error.Message.msg);
+                return new ConflictObjectResult(error.Message.msg);
+            }
             return new ObjectResult(new { error = "Unexpected service response" }) { StatusCode = 502 };
-        });
+        }, "Register", new { request.Email, request.UserName });
     }
 }

@@ -6,7 +6,9 @@ using Comment.Infrastructure.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace Comment.Infrastructure.BackgroundServices
@@ -17,17 +19,20 @@ namespace Comment.Infrastructure.BackgroundServices
         private readonly IServiceProvider _services;
         private readonly IMapper _mapper;
         private readonly IHubContext<NotificationHub> _notificationHub;
+        private readonly ILogger<NotificationMigrationWorker> _logger;
 
-        public NotificationMigrationWorker(IConnectionMultiplexer redis, IServiceProvider services, IMapper mapper, IHubContext<NotificationHub> notificationHub)
+        public NotificationMigrationWorker(IConnectionMultiplexer redis, IServiceProvider services, IMapper mapper, IHubContext<NotificationHub> notificationHub, ILogger<NotificationMigrationWorker> logger)
         {
             _redis = redis;
             _services = services;
             _mapper = mapper;
             _notificationHub = notificationHub;
+            _logger = logger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            _logger.LogInformation("NotificationMigrationWorker started.");
             var redisDb = _redis.GetDatabase();
 
             while (!stoppingToken.IsCancellationRequested)
@@ -41,6 +46,7 @@ namespace Comment.Infrastructure.BackgroundServices
                         await Task.Delay(5000, stoppingToken);
                         continue;
                     }
+                    var sw = Stopwatch.StartNew();
                     using (var scope = _services.CreateScope())
                     {
                         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -48,10 +54,15 @@ namespace Comment.Infrastructure.BackgroundServices
 
                         foreach (var json in notificationsJson)
                         {
-                            var notification = JsonSerializer.Deserialize<NotificationModel>(json.ToString());
-                            if (notification != null)
+                            try
                             {
-                                newNotification.Add(notification);
+                                var notification = JsonSerializer.Deserialize<NotificationModel>(json.ToString());
+                                if (notification != null)
+                                    newNotification.Add(notification);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Failed to deserialize notification. Raw data: {Json}", json.ToString());
                             }
                         }
                         if (newNotification.Any())
@@ -59,17 +70,29 @@ namespace Comment.Infrastructure.BackgroundServices
                             await db.Notification.AddRangeAsync(newNotification);
                             await db.SaveChangesAsync(stoppingToken);
 
+                            int sentCount = 0;
                             foreach (var notification in newNotification)
                             {
-                                var viewModel = _mapper.Map<NotificationViewModel>(notification);
-                                await _notificationHub.Clients.User(notification.RecipientId.ToString())
-                                    .SendAsync("ReceiveNotification", viewModel, stoppingToken);
+                                try
+                                {
+                                    var viewModel = _mapper.Map<NotificationViewModel>(notification);
+                                    await _notificationHub.Clients.User(notification.RecipientId.ToString())
+                                        .SendAsync("ReceiveNotification", viewModel, stoppingToken);
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.LogWarning(ex, "Failed to send SignalR notification to user {UserId}", notification.RecipientId);
+                                }
                             }
+                            sw.Stop();
+                            _logger.LogInformation("Processed {Count} notifications. Database saved. SignalR sent: {SentCount}. Time: {Elapsed}ms",
+                                newNotification.Count, sentCount, sw.ElapsedMilliseconds);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Critical error in NotificationMigrationWorker loop");
                     await Task.Delay(5000, stoppingToken);
                 }
             }

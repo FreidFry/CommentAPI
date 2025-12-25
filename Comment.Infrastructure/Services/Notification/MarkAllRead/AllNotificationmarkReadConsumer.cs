@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Comment.Infrastructure.Services.Notification.MarkAllRead
 {
-    public class AllNotificationmarkReadConsumer
+    public class AllNotificationmarkReadConsumer : IConsumer<AllNotificationsMarkReadRequest>
     {
         private readonly AppDbContext _appDbContext;
         public AllNotificationmarkReadConsumer(AppDbContext appDbContext)

@@ -5,6 +5,7 @@ using Comment.Infrastructure.Wrappers;
 using MassTransit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Comment.Infrastructure.Services.Notification.GetHistory
 {
@@ -12,7 +13,7 @@ namespace Comment.Infrastructure.Services.Notification.GetHistory
     {
         private readonly IRequestClient<GetNotificationRequest> _client;
 
-        public GetNotificationHistoryHandler(IRequestClient<GetNotificationRequest> client)
+        public GetNotificationHistoryHandler(IRequestClient<GetNotificationRequest> client, ILogger<GetNotificationHistoryHandler> _logger) : base(_logger)
         {
             _client = client;
         }
@@ -22,11 +23,12 @@ namespace Comment.Infrastructure.Services.Notification.GetHistory
        {
            var callerId = ClaimsExtensions.GetCallerId(httpContext);
 
+           _logger.LogDebug("Fetching notification history for User {UserId}", callerId);
            var response = await _client.GetResponse<GetNotificationResponse>(new(callerId), cancellationToken);
 
            if (response is Response<GetNotificationResponse> notifications) return new OkObjectResult(notifications.Message.Notifications);
 
            return new ObjectResult(new { error = "Unexpected service response" }) { StatusCode = 502 };
-       });
+       }, "GetNotificationHistory", new { UserId = ClaimsExtensions.GetCallerId(httpContext) });
     }
 }

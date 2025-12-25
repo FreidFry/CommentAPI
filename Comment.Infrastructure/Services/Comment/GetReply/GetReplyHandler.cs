@@ -4,13 +4,14 @@ using Comment.Infrastructure.Services.Comment.GetReply.Request;
 using Comment.Infrastructure.Wrappers;
 using MassTransit;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Comment.Infrastructure.Services.Comment.GetReply
 {
     public class GetReplyHandler : HandlerWrapper, IGetReplyHandler
     {
         private readonly IRequestClient<GetReplyRequest> _client;
-        public GetReplyHandler(IRequestClient<GetReplyRequest> client)
+        public GetReplyHandler(IRequestClient<GetReplyRequest> client, ILogger<GetReplyHandler> _logger) : base(_logger)
         {
             _client = client;
         }
@@ -26,6 +27,6 @@ namespace Comment.Infrastructure.Services.Comment.GetReply
                 StatusCode = statusCode.Message.StatusCode
             };
             return new ObjectResult(new { error = "Unexpected service response" }) { StatusCode = 502 };
-        });
+        }, "GetReply", new { request.CommentId });
     }
 }

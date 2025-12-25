@@ -6,7 +6,9 @@ using Comment.Infrastructure.Services.Comment.DTOs.Response;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace Comment.Infrastructure.BackgroundServices
@@ -16,42 +18,69 @@ namespace Comment.Infrastructure.BackgroundServices
         private readonly IConnectionMultiplexer _redis;
         private readonly IServiceProvider _services;
         private readonly IMapper _mapper;
+        private readonly ILogger<CommentsCacheWorker> _logger;
         private readonly int _commentsToCache = 75;
 
-        public CommentsCacheWorker(IConnectionMultiplexer redis, IServiceProvider services, IMapper mapper)
+        public CommentsCacheWorker(IConnectionMultiplexer redis, IServiceProvider services, IMapper mapper, ILogger<CommentsCacheWorker> logger)
         {
             _redis = redis;
             _services = services;
             _mapper = mapper;
+            _logger = logger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            _logger.LogInformation("CommentsCacheWorker started. Interval: 30 min.");
+
             while (!stoppingToken.IsCancellationRequested)
             {
-                using (var scope = _services.CreateScope())
+                try
                 {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                    var redisDb = _redis.GetDatabase();
-
-                    var activeThreadIds = await dbContext.Threads
-                        .AsNoTracking()
-                        .Where(t => !t.IsDeleted && !t.IsBanned)
-                        .OrderByDescending(t => t.Comments.Max(c => c.CreatedAt))
-                        .Select(t => t.Id)
-                        .Take(100)
-                        .ToListAsync(stoppingToken);
-
-                    foreach (var threadId in activeThreadIds)
+                    var sw = Stopwatch.StartNew();
+                    using (var scope = _services.CreateScope())
                     {
-                        await WarmUpCommentCache(threadId, dbContext, SortByEnum.CreateAt, redisDb, stoppingToken, true);
-                        await WarmUpCommentCache(threadId, dbContext, SortByEnum.UserName, redisDb, stoppingToken);
-                        await WarmUpCommentCache(threadId, dbContext, SortByEnum.Email, redisDb, stoppingToken);
+                        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                        var activeThreadIds = await dbContext.Threads
+                            .AsNoTracking()
+                            .Where(t => !t.IsDeleted && !t.IsBanned)
+                            .OrderByDescending(t => t.Comments.Max(c => c.CreatedAt))
+                            .Select(t => t.Id)
+                            .Take(100)
+                            .ToListAsync(stoppingToken);
+
+                        _logger.LogInformation("Found {Count} active threads for cache warmup", activeThreadIds.Count);
+
+                        int successCount = 0;
+                        foreach (var threadId in activeThreadIds)
+                        {
+                            try
+                            {
+                                var redisDb = _redis.GetDatabase();
+                                await WarmUpCommentCache(threadId, dbContext, SortByEnum.CreateAt, redisDb, stoppingToken, true);
+                                await WarmUpCommentCache(threadId, dbContext, SortByEnum.UserName, redisDb, stoppingToken);
+                                await WarmUpCommentCache(threadId, dbContext, SortByEnum.Email, redisDb, stoppingToken);
+                                successCount++;
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Failed to warmup cache for thread {ThreadId}", threadId);
+                            }
+                        }
+                        sw.Stop();
+                        _logger.LogInformation("Cache warmup cycle completed. Processed {Success}/{Total} threads in {Elapsed}s",
+                            successCount, activeThreadIds.Count, sw.Elapsed.TotalSeconds);
                     }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogCritical(ex, "Fatal error in CommentsCacheWorker main loop");
                 }
 
                 await Task.Delay(TimeSpan.FromMinutes(30), stoppingToken);
             }
+
         }
 
 
