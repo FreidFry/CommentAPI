@@ -17,8 +17,6 @@ namespace Comment.Infrastructure.Maps
                 .ForMember(dest => dest.LastActive, opt => opt.MapFrom(src => src.LastActive))
                 .ForMember(dest => dest.Threads, opt => opt.MapFrom(src => src.Threads));
 
-            CreateMap<UserModel, UserUpdateAvatarDTO>()
-                .ForMember(dest => dest.AvatarId, opt => opt.Ignore());
         }
     }
 }
