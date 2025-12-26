@@ -27,6 +27,32 @@ namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread
             _dataBase = connectionMultiplexer.GetDatabase();
         }
 
+        /// <summary>
+        /// Retrieves a paginated list of comments for a specific thread with support for cursor-based navigation 
+        /// and deep-linking (focusing) on a specific comment.
+        /// </summary>
+        /// <param name="context">The consume context containing the <see cref="CommentsByThreadRequestDTO"/>.</param>
+        /// <returns>
+        /// A <see cref="CommentsListResponse"/> containing the list of comments, a cursor for the next page, 
+        /// and a boolean indicating if more data is available.
+        /// </returns>
+        /// <remarks>
+        /// Pagination and Sorting Logic:
+        /// <list type="bullet">
+        /// <item>
+        /// <term>Focus Mode:</term>
+        /// <description>If <c>FocusCommentId</c> is provided, the method fetches a specific branch of the conversation.</description>
+        /// </item>
+        /// <item>
+        /// <term>Cursor-Based Pagination:</term>
+        /// <description>Uses the last item's value (Email, Username, or Date) as a cursor to fetch the next set of results, avoiding "offset skip" performance issues.</description>
+        /// </item>
+        /// <item>
+        /// <term>Look-ahead Buffer:</term>
+        /// <description>Fetches <c>Limit + 1</c> items to determine <c>HasMore</c> without an extra count query.</description>
+        /// </item>
+        /// </list>
+        /// </remarks>
         public async Task Consume(ConsumeContext<CommentsByThreadRequestDTO> context)
         {
             var request = context.Message;

@@ -21,6 +21,25 @@ namespace Comment.Infrastructure.Services.Capcha.CapchaGenerate
             _cache = cache;
             _captchaConfig = captchaConfig;
         }
+
+        /// <summary>
+        /// Processes a request to generate a new CAPTCHA.
+        /// This method generates a random code, stores it in the distributed cache, and renders a noise-protected image.
+        /// </summary>
+        /// <param name="context">The consume context containing the <see cref="CaptchaGenerateRequest"/>.</param>
+        /// <returns>
+        /// A <see cref="CaptchaGenerateResponse"/> containing a unique tracking ID and the Base64-encoded PNG image.
+        /// </returns>
+        /// <remarks>
+        /// The generation process follows these steps:
+        /// <list type="number">
+        /// <item>Generates a 5-character alphanumeric code.</item>
+        /// <item>Persists the code in Redis (via <see cref="IDistributedCache"/>) with a 5-minute expiration.</item>
+        /// <item>Renders the image using <c>SixLabors.ImageSharp</c> with random fonts, styles, and sizes.</item>
+        /// <item>Applies security noise: random background lines, colored text, and pixel-based "salt".</item>
+        /// <item>Converts the resulting image into a Base64 string for safe transport.</item>
+        /// </list>
+        /// </remarks>
         public async Task Consume(ConsumeContext<CaptchaGenerateRequest> context)
         {
             var code = GenerateRandomCode(5);

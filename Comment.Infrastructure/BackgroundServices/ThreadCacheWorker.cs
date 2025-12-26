@@ -1,5 +1,4 @@
-﻿using Amazon.Runtime.Internal.Util;
-using AutoMapper;
+﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Comment.Core.Data;
 using Comment.Infrastructure.Services.Thread.DTOs;
@@ -15,6 +14,9 @@ using System.Text.Json;
 
 namespace Comment.Infrastructure.BackgroundServices
 {
+    /// <summary>
+    /// Sends threads at intervals to Redis, creating “preview” and “details” variants.
+    /// </summary>
     public class ThreadCacheWorker : BackgroundService
     {
         private readonly IConnectionMultiplexer _redis;

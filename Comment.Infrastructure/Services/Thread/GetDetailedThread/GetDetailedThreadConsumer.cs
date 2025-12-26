@@ -6,7 +6,6 @@ using Comment.Infrastructure.Services.Thread.DTOs.Request;
 using Comment.Infrastructure.Services.Thread.GetDetailedThread.Response;
 using FluentValidation;
 using MassTransit;
-using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 
@@ -25,6 +24,31 @@ namespace Comment.Infrastructure.Services.Thread.GetDetailedThread
             _database = multiplexer.GetDatabase();
         }
 
+        /// <summary>
+        /// Retrieves detailed information about a specific thread, prioritizing the Redis cache 
+        /// and falling back to the database if necessary.
+        /// </summary>
+        /// <param name="context">The consume context containing the <see cref="ThreadDetaliRequestDTO"/>.</param>
+        /// <returns>
+        /// A <see cref="DetailedThreadResponse"/> containing thread metadata, or a <see cref="StatusCodeResponse"/> (404) if not found.
+        /// </returns>
+        /// <remarks>
+        /// Data Retrieval Strategy:
+        /// <list type="number">
+        /// <item>
+        /// <term>Cache-First:</term>
+        /// <description>Attempts to fetch the thread JSON directly from Redis for sub-millisecond latency.</description>
+        /// </item>
+        /// <item>
+        /// <term>Security-Aware Fallback:</term>
+        /// <description>If cache misses, queries the database. Includes a special check allowing owners to view their own deleted threads.</description>
+        /// </item>
+        /// <item>
+        /// <term>Efficient Mapping:</term>
+        /// <description>Uses <c>ProjectTo</c> for optimal SQL generation during database fallback.</description>
+        /// </item>
+        /// </list>
+        /// </remarks>
         public async Task Consume(ConsumeContext<ThreadDetaliRequestDTO> context)
         {
             var dto = context.Message;

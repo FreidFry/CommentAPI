@@ -33,6 +33,36 @@ namespace Comment.Infrastructure.Services.Thread.CreateThread
             _database = multiplexer.GetDatabase();
         }
 
+        /// <summary>
+        /// Processes a request to create a new discussion thread. 
+        /// Validates input, checks user status, and populates Redis caches for both detailed and preview views.
+        /// </summary>
+        /// <param name="context">The consume context containing the <see cref="ThreadCreateRequestDTO"/>.</param>
+        /// <returns>
+        /// A <see cref="ThreadCreateSuccess"/> with the new thread ID on success, 
+        /// or error responses (404 for missing users, 403 for banned/deleted accounts, or validation errors).
+        /// </returns>
+        /// <remarks>
+        /// Implementation details:
+        /// <list type="number">
+        /// <item>
+        /// <term>Validation:</term>
+        /// <description>Executes FluentValidation to ensure title and content meet business rules.</description>
+        /// </item>
+        /// <item>
+        /// <term>Security:</term>
+        /// <description>Sanitizes both Title and Context using <see cref="IHtmlSanitizer"/> to prevent XSS.</description>
+        /// </item>
+        /// <item>
+        /// <term>Cache Priming:</term>
+        /// <description>Immediately warms up Redis by storing the detailed thread view and a preview object.</description>
+        /// </item>
+        /// <item>
+        /// <term>Indexing:</term>
+        /// <description>Adds the thread ID to a Redis Sorted Set (<c>all_active_previews</c>) using <c>CreatedAt.Ticks</c> as the score for chronological sorting.</description>
+        /// </item>
+        /// </list>
+        /// </remarks>
         public async Task Consume(ConsumeContext<ThreadCreateRequestDTO> context)
         {
             var dto = context.Message;

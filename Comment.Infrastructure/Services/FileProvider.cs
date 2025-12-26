@@ -7,6 +7,10 @@ using System.Diagnostics;
 
 namespace Comment.Infrastructure.Services
 {
+    /// <summary>
+    /// Implementation of <see cref="IFileProvider"/> using Amazon S3-compatible storage.
+    /// Handles file and image uploads with automated logging and performance tracking.
+    /// </summary>
     public class FileProvider : IFileProvider
     {
         private readonly IAmazonS3 _s3Client;
@@ -30,12 +34,10 @@ namespace Comment.Infrastructure.Services
             _logger = logger;
         }
 
-        /// <summary>
-        /// Stores a file from a local path in Cloudflare R2 (S3)
-        /// </summary>
-        /// <param name="path">Local path to the file</param>
-        /// <param name="cancellationToken">Сancellation Token</param>
-        /// <returns>Public URL of the uploaded file</returns>
+        /// <inheritdoc />
+        /// <remarks>
+        /// Uploads an image to the designated image bucket and returns the public access URL.
+        /// </remarks>
         public async Task<string> SaveImageAsync(MemoryStream stream, string s3Key, string contentType, CancellationToken cancellationToken)
         {
             var sw = Stopwatch.StartNew();
@@ -76,7 +78,10 @@ namespace Comment.Infrastructure.Services
         private static string GetNewFileName() =>
     $"{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}_{Guid.NewGuid().ToString()[..5]}";
 
-
+        /// <inheritdoc />
+        /// <remarks>
+        /// Uploads a generic file (defaulting to plain text) to the designated text bucket.
+        /// </remarks>
         public async Task<string> SaveFileAsync(Stream stream, CancellationToken cancellationToken)
         {
             var sw = Stopwatch.StartNew();

@@ -1,10 +1,4 @@
-﻿using Comment.Infrastructure.Interfaces;
-using Microsoft.Extensions.Caching.Distributed;
-using SixLabors.Fonts;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
+﻿using Microsoft.Extensions.Caching.Distributed;
 
 namespace Comment.Infrastructure.Utils;
 
@@ -15,9 +9,7 @@ public class CaptchaService
 
     public CaptchaService(IDistributedCache cache)
     {
-        _cache = cache;
-
-        
+        _cache = cache;       
     }
 
     public async Task<bool> ValidateAsync(string id, string inputCode)

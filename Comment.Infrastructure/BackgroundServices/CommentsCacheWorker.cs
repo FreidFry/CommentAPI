@@ -13,6 +13,9 @@ using System.Text.Json;
 
 namespace Comment.Infrastructure.BackgroundServices
 {
+    /// <summary>
+    /// Sends comments from posts on the front page to Redis at regular intervals for quick access.
+    /// </summary>
     public class CommentsCacheWorker : BackgroundService
     {
         private readonly IConnectionMultiplexer _redis;

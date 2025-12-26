@@ -29,7 +29,6 @@ using Comment.Infrastructure.Services.Thread.UpdateThread;
 using Comment.Infrastructure.Services.Thread.UpdateThread.Request;
 using Comment.Infrastructure.Services.User.GetProfile;
 using Comment.Infrastructure.Services.User.GetProfile.Request;
-using Comment.Infrastructure.Services.User.Validators;
 using Comment.Infrastructure.Utils;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;

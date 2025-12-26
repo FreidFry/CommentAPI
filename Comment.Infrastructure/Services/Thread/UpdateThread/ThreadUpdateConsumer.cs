@@ -27,6 +27,36 @@ namespace Comment.Infrastructure.Services.Thread.UpdateThread
             _htmlSanitizer = htmlSanitizer;
         }
 
+        /// <summary>
+        /// Processes a request to update an existing thread's title and content.
+        /// Validates ownership, cleanses input to prevent XSS, and persists changes to the database.
+        /// </summary>
+        /// <param name="context">The consume context containing the <see cref="UpdateThreadRequestDTO"/>.</param>
+        /// <returns>
+        /// An <see cref="UpdateThreadSucces"/> response on success, 
+        /// or error codes (404 for missing threads, 403 for unauthorized access).
+        /// </returns>
+        /// <remarks>
+        /// Implementation Logic:
+        /// <list type="bullet">
+        /// <item>
+        /// <term>Validation:</term>
+        /// <description>Uses a specific <c>UpdateValidator</c> to ensure the new data meets length and format requirements.</description>
+        /// </item>
+        /// <item>
+        /// <term>Security Sanitization:</term>
+        /// <description>Applies <see cref="IHtmlSanitizer"/> to both Title and Context to ensure no malicious scripts are injected.</description>
+        /// </item>
+        /// <item>
+        /// <term>Optimistic Concurrency:</term>
+        /// <description>Updates <c>LastUpdatedAt</c> to maintain an accurate audit trail of changes.</description>
+        /// </item>
+        /// <item>
+        /// <term>Shadow Property Access:</term>
+        /// <description>Directly manipulates properties via <c>Entry().Property()</c> to ensure precise change tracking.</description>
+        /// </item>
+        /// </list>
+        /// </remarks>
         public async Task Consume(ConsumeContext<UpdateThreadRequestDTO> context)
         {
             var dto = context.Message;

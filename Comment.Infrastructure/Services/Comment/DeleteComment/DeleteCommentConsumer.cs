@@ -18,6 +18,25 @@ namespace Comment.Infrastructure.Services.Comment.DeleteComment
             _validator = validator;
         }
 
+        /// <summary>
+        /// Processes a request to soft-delete a comment. 
+        /// Validates request parameters, checks ownership, and updates the comment status in the database.
+        /// </summary>
+        /// <param name="context">The consume context containing the <see cref="DeleteCommentRequestDTO"/>.</param>
+        /// <returns>
+        /// A <see cref="StatusCodeResponse"/> with 204 (No Content) on success, 
+        /// 404 (Not Found) if the comment doesn't exist, or 403 (Forbidden) if the caller is not the author.
+        /// Returns <see cref="ValidatorErrorResponse"/> if the input data is malformed.
+        /// </returns>
+        /// <remarks>
+        /// Security and Logic:
+        /// <list type="bullet">
+        /// <item>Uses FluentValidation to ensure the request DTO is structurally sound.</item>
+        /// <item>Implements Ownership Enforcement: Only the user who created the comment can delete it.</item>
+        /// <item>Performs Soft Delete: Invokes <c>MarkAsDeleted()</c> which usually toggles a boolean flag instead of removing the row.</item>
+        /// <item>Supports idempotency: If the comment is already marked as deleted, it returns 404.</item>
+        /// </list>
+        /// </remarks>
         public async Task Consume(ConsumeContext<DeleteCommentRequestDTO> context)
         {
             var cancellationToken = context.CancellationToken;

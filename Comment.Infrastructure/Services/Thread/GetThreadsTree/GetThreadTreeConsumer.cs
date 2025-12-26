@@ -26,6 +26,35 @@ namespace Comment.Infrastructure.Services.Thread.GetThreadsTree
             _dataBase = connectionMultiplexer.GetDatabase();
         }
 
+        /// <summary>
+        /// Retrieves a paginated list of thread previews using a hybrid approach (Redis + SQL Fallback).
+        /// Implements cursor-based pagination to provide a smooth "infinite scroll" experience.
+        /// </summary>
+        /// <param name="context">The consume context containing the <see cref="ThreadsThreeRequest"/> with limit and cursor.</param>
+        /// <returns>
+        /// A <see cref="ThreadsTreeResponse"/> containing the list of threads, the next timestamp cursor, and a "HasMore" flag.
+        /// </returns>
+        /// <remarks>
+        /// Multi-layer Retrieval Strategy:
+        /// <list type="number">
+        /// <item>
+        /// <term>Redis Index Look-up:</term>
+        /// <description>Fetches thread IDs from a Sorted Set (<c>all_active_previews</c>) based on the provided timestamp cursor.</description>
+        /// </item>
+        /// <item>
+        /// <term>Bulk Cache Fetch:</term>
+        /// <description>Executes parallel <c>GET</c> operations to retrieve JSON previews for all discovered IDs.</description>
+        /// </item>
+        /// <item>
+        /// <term>Database Fallback:</term>
+        /// <description>If the cache contains fewer items than the requested limit, the gap is filled by querying the SQL database.</description>
+        /// </item>
+        /// <item>
+        /// <term>Pagination Handling:</term>
+        /// <description>Uses a "Limit + 1" approach to determine the <c>HasMore</c> status without extra count queries.</description>
+        /// </item>
+        /// </list>
+        /// </remarks>
         public async Task Consume(ConsumeContext<ThreadsThreeRequest> context)
         {
             var request = context.Message;
@@ -76,7 +105,6 @@ namespace Comment.Infrastructure.Services.Thread.GetThreadsTree
 
             await context.RespondAsync(new ThreadsTreeResponse(finalThreads, nextCursor, HasMore));
         }
-
 
         private async Task<List<ThreadsResponseViewModel>> GetFromDb(DateTime? after, int need, CancellationToken cancellationToken)
         {

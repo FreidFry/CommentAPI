@@ -1,7 +1,7 @@
 ﻿using Comment.Infrastructure.Services.User.GetProfile.Request;
 using FluentValidation;
 
-namespace Comment.Infrastructure.Services.User.Validators
+namespace Comment.Infrastructure.Services.User.GetProfile
 {
     public class GetProfileValidator : AbstractValidator<ProfileGetRequestDTO>
     {

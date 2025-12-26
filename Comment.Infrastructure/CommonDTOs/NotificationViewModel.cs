@@ -1,5 +1,8 @@
 ﻿namespace Comment.Infrastructure.CommonDTOs
 {
+    /// <summary>
+    /// A universal data model for sending notifications to the user.
+    /// </summary>
     public record NotificationViewModel
     {
         public Guid Id { get; set; }
@@ -9,8 +12,8 @@
         public DateTime CreateAt { get; set; }
         public string CreatorName { get; set; }
         public string CreatorAvatarUrl { get; set; }
-        public Guid ThreadId { get; set; }
-        public Guid CommentId { get; set; }
+        public Guid? ThreadId { get; set; }
+        public Guid? CommentId { get; set; }
         public bool IsRead { get; set; }
 
         public NotificationViewModel()
@@ -18,7 +21,7 @@
             
         }
 
-        public NotificationViewModel(Guid Id, string Title, string Message, string Type, DateTime CreateAt, string CreatorName, string CreatorAvatarUrl, Guid ThreadId, Guid CommentId, bool IsRead)
+        public NotificationViewModel(Guid Id, string Title, string Message, string Type, DateTime CreateAt, string CreatorName, string CreatorAvatarUrl, Guid? ThreadId, Guid? CommentId, bool IsRead)
         {
             this.Id = Id;
             this.Title = Title;

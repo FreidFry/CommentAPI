@@ -23,6 +23,31 @@ namespace Comment.Infrastructure.Services.Comment.GetReply
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Retrieves a paginated list of direct replies (child comments) for a specific parent comment.
+        /// </summary>
+        /// <param name="context">The consume context containing the <see cref="GetReplyRequest"/>.</param>
+        /// <returns>
+        /// A <see cref="CommentsListResponse"/> containing the collection of replies, 
+        /// a cursor for the next batch, and a flag indicating if more replies exist.
+        /// </returns>
+        /// <remarks>
+        /// Retrieval Logic:
+        /// <list type="bullet">
+        /// <item>
+        /// <term>Security Filtering:</term>
+        /// <description>Automatically excludes replies from banned or deleted users, as well as comments marked as deleted.</description>
+        /// </item>
+        /// <item>
+        /// <term>Depth Control:</term>
+        /// <description>Filters replies to ensure they are exactly one level deeper than the parent (<c>ParentDepth + 1</c>).</description>
+        /// </item>
+        /// <item>
+        /// <term>Cursor Pagination:</term>
+        /// <description>Uses the <c>After</c> timestamp to fetch the next set of chronological results.</description>
+        /// </item>
+        /// </list>
+        /// </remarks>
         public async Task Consume(ConsumeContext<GetReplyRequest> context)
         {
             var dto = context.Message;

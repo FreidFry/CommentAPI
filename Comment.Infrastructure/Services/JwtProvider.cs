@@ -7,6 +7,9 @@ using System.Text;
 
 namespace Comment.Infrastructure.Services
 {
+    /// <summary>
+    /// Provides functionality to generate JSON Web Tokens (JWT) for user authentication.
+    /// </summary>
     public class JwtProvider : IJwtProvider
     {
         private readonly IJwtOptions _options;
@@ -16,6 +19,11 @@ namespace Comment.Infrastructure.Services
             _options = options;
         }
 
+        /// <inheritdoc />
+        /// <remarks>
+        /// This method generates a token containing the user's ID, Username, and Roles as claims.
+        /// The token is signed using the HMAC SHA-256 algorithm.
+        /// </remarks>
         public string GenerateToken(UserModel user)
         {
             Claim[] claims = [new(ClaimTypes.NameIdentifier, user.Id.ToString()), new (ClaimTypes.Name, user.UserName), new(ClaimTypes.Role, string.Join(",",user.Roles))];

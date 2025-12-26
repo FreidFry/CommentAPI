@@ -70,8 +70,4 @@
     <PackageReference Include="RestSharp" Version="113.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Interfaces\Services\" />
-  </ItemGroup>
-
 </Project>

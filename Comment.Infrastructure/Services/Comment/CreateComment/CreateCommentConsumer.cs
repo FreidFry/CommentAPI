@@ -37,6 +37,25 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Processes the creation of a new comment, including validation, HTML sanitization, 
+        /// file processing (images/GIFs/text), and complex cache synchronization with Redis.
+        /// </summary>
+        /// <param name="context">The consume context containing the <see cref="CommentCreateRequestDTO"/>.</param>
+        /// <returns>
+        /// A <see cref="CreateCommentSuccesResponse"/> on success, or a <see cref="StatusCodeResponse"/> 
+        /// (400/404) if the thread, user, or parent comment is invalid or if content validation fails.
+        /// </returns>
+        /// <remarks>
+        /// This consumer performs high-level orchestration:
+        /// <list type="number">
+        /// <item>Verifies existence and status (Banned/Deleted) of the Thread and User.</item>
+        /// <item>Sanitizes HTML content and ensures plain text presence.</item>
+        /// <item>Handles parent-child relationships for nested comments.</item>
+        /// <item>Retrieves temporary files from Redis and persists them to permanent storage (S3) with transformations.</item>
+        /// <item>Synchronizes data to Redis using batches: updates sorted sets for indexing and queues notifications.</item>
+        /// </list>
+        /// </remarks>
         public async Task Consume(ConsumeContext<CommentCreateRequestDTO> context)
         {
             var dto = context.Message;

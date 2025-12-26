@@ -10,11 +10,15 @@ using System.Text.Json;
 
 namespace Comment.Infrastructure.BackgroundServices
 {
+    /// <summary>
+    /// Responsible for periodically transferring comments from Redis to the database and updating the count in Redis.
+    /// </summary>
     public class CommentMigrationWorker : BackgroundService
     {
         private readonly IConnectionMultiplexer _redis;
         private readonly IServiceProvider _services;
         private readonly ILogger<CommentMigrationWorker> _logger;
+
 
         public CommentMigrationWorker(IConnectionMultiplexer redis, IServiceProvider services, ILogger<CommentMigrationWorker> logger)
         {

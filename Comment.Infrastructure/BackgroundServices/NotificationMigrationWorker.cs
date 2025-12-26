@@ -13,6 +13,9 @@ using System.Text.Json;
 
 namespace Comment.Infrastructure.BackgroundServices
 {
+    /// <summary>
+    /// Sends notifications after creation in <see cref="Services.Comment.CreateComment.CreateCommentConsumer"/> to the database and also sends them to the recipient.
+    /// </summary>
     public class NotificationMigrationWorker : BackgroundService
     {
         private readonly IConnectionMultiplexer _redis;

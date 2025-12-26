@@ -4,7 +4,6 @@ using Comment.Core.Persistence;
 using Comment.Infrastructure.Services.Auth.Register.Request;
 using Comment.Infrastructure.Services.Auth.Register.Response;
 using MassTransit;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Comment.Infrastructure.Services.Auth.Register
@@ -20,6 +19,24 @@ namespace Comment.Infrastructure.Services.Auth.Register
             _passwordHasher = passwordHasher;
         }
 
+        /// <summary>
+/// Handles the user registration process by validating input, checking for existing users, 
+/// hashing the password, and persisting the new user record.
+/// </summary>
+/// <param name="context">The consume context containing the <see cref="UserRegisterRequest"/>.</param>
+/// <returns>
+/// Sends a <see cref="RegisterSuccesResult"/> upon successful creation, 
+/// or a <see cref="ConflictRegisterResponse"/> if validation fails or the user already exists.
+/// </returns>
+/// <remarks>
+/// The registration flow includes:
+/// <list type="number">
+/// <item>Comparison of password and confirmation password.</item>
+/// <item>Uniqueness check for the <c>UserName</c> in the database.</item>
+/// <item>Password hashing using the injected <see cref="IPasswordHasher"/>.</item>
+/// <item>Asynchronous persistence to the <see cref="AppDbContext"/>.</item>
+/// </list>
+/// </remarks>
         async Task IConsumer<UserRegisterRequest>.Consume(ConsumeContext<UserRegisterRequest> context)
         {
             if (!context.Message.Password.Equals(context.Message.ConfirmPassword))

@@ -9,6 +9,9 @@ using System.Text.Json;
 
 namespace Comment.Infrastructure.BackgroundServices
 {
+    /// <summary>
+    /// Sends several threads to the database 
+    /// </summary>
     public class ThreadMigrationWorker : BackgroundService
     {
         private readonly IConnectionMultiplexer _redis;
