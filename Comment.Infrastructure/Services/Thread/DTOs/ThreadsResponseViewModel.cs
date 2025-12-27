@@ -16,7 +16,7 @@ namespace Comment.Infrastructure.Services.Thread.DTOs
         public string Title { get; set; } = string.Empty;
 
         /// <summary>Gets or sets the main text or description of the thread.</summary>
-        [JsonPropertyName("content")]
+        [JsonPropertyName("context")]
         public string Content { get; set; } = string.Empty;
 
         /// <summary>Gets or sets the date and time when the thread was originally published.</summary>
