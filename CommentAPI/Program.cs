@@ -15,7 +15,9 @@ builder.Configuration.AddEnvironmentVariables();
 builder.Services.Configure<ApiOptions>(builder.Configuration);
 builder.Services.Configure<JwtOptions>(builder.Configuration);
 builder.Services.Configure<KestrelConfig>(builder.Configuration);
-var jwtOptions = new JwtOptions(builder.Configuration);
+JwtOptions? jwtOptions = null;
+if (runMode == "API" || runMode == "All")
+    jwtOptions = new JwtOptions(builder.Configuration);
 var apiConfig = new ApiOptions(builder.Configuration);
 
 builder.Services.SetupSignalR(apiConfig);
@@ -50,10 +52,13 @@ builder.Services.AddRouting(options =>
     options.LowercaseQueryStrings = true;
     options.AppendTrailingSlash = true;
 });
-var kestrelConfig = new KestrelConfig(builder.Configuration);
-builder.Services.AddPortConfiguration(builder.WebHost, kestrelConfig);
+KestrelConfig? kestrelConfig = null;
 
-
+if (runMode == "API" || runMode == "All")
+{
+    kestrelConfig = new KestrelConfig(builder.Configuration);
+    builder.Services.AddPortConfiguration(builder.WebHost, kestrelConfig);
+}
 
 builder.Services.AddRedisCache(apiConfig);
 
@@ -65,8 +70,9 @@ builder.Services.AddDipedencyInjections();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(apiConfig.DbConnection));
 
-
-builder.Services.AddCors(options =>
+if (runMode == "API" || runMode == "All")
+{
+    builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll",
         builder =>
             builder.WithOrigins(kestrelConfig.httpDomen, kestrelConfig.httpDomenSecure)
@@ -75,6 +81,8 @@ builder.Services.AddCors(options =>
             .AllowCredentials()
     )
 );
+}
+
 builder.Services.AddLogging(builder =>
     builder.AddConsole()
     .AddDebug()

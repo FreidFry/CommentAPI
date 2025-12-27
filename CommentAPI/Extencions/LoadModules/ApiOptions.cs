@@ -47,6 +47,8 @@ namespace CommentAPI.Extencions.LoadModules
         #endregion
         public ApiOptions(IConfiguration config)
         {
+            var runMode = Environment.GetEnvironmentVariable("RUN_MODE") ?? "All";
+
             DbName = config["DB:DbName"] ?? throw new ArgumentNullException("DB__DbName");
             DbUser = config["DB:User"] ?? throw new ArgumentNullException("DB__User");
             DbPassword = config["DB:Password"] ?? throw new ArgumentNullException("DB__Password");
@@ -59,17 +61,6 @@ namespace CommentAPI.Extencions.LoadModules
             RedisCapchaInstanceName = config["Redis:CapchaInstanceName"] ?? throw new ArgumentNullException("Redis__CapchaInstanceName");
 
             DbConnection = $"Host={DbServer};Port={DbPort};Database={DbName};Username={DbUser};Password={DbPassword}";
-
-            ImageAccessKeyId = config["S3:image:AccessKeyId"] ?? throw new ArgumentNullException("S3__Image__AccessKeyId");
-            ImageSecretAccessKey = config["S3:image:SecretAccessKey"] ?? throw new ArgumentNullException("S3__Image__SecretAccessKey");
-            ImageStorageUrl = config["S3:image:StorageUrl"] ?? throw new ArgumentNullException("S3__Image__StorageUrl");
-            ImagePublicUrl = config["S3:image:PublicUrl"] ?? throw new ArgumentNullException("S3__Image__PublicUrl");
-            ImageBucketName = config["S3:image:BucketName"] ?? throw new ArgumentNullException("S3__Image__BucketName");
-            TxtAccessKeyId = config["S3:txt:AccessKeyId"] ?? throw new ArgumentNullException("S3__txt__AccessKeyId");
-            TxtSecretAccessKey = config["S3:txt:SecretAccessKey"] ?? throw new ArgumentNullException("S3__txt__SecretAccessKey");
-            TxtStorageUrl = config["S3:txt:StorageUrl"] ?? throw new ArgumentNullException("S3__txt__StorageUrl");
-            TxtPublicUrl = config["S3:txt:PublicUrl"] ?? throw new ArgumentNullException("S3__txt__PublicUrl");
-            TxtBucketName = config["S3:txt:BucketName"] ?? throw new ArgumentNullException("S3__txt__BucketName");
 
             var connectionString = RedisConnect;
 
@@ -93,6 +84,20 @@ namespace CommentAPI.Extencions.LoadModules
                     connectionString += ",abortConnect=false";
 
                 RedisConnect = connectionString;
+            }
+
+            if (runMode == "Worker" || runMode == "All")
+            {
+                ImageAccessKeyId = config["S3:image:AccessKeyId"] ?? throw new ArgumentNullException("S3__Image__AccessKeyId");
+                ImageSecretAccessKey = config["S3:image:SecretAccessKey"] ?? throw new ArgumentNullException("S3__Image__SecretAccessKey");
+                ImageStorageUrl = config["S3:image:StorageUrl"] ?? throw new ArgumentNullException("S3__Image__StorageUrl");
+                ImagePublicUrl = config["S3:image:PublicUrl"] ?? throw new ArgumentNullException("S3__Image__PublicUrl");
+                ImageBucketName = config["S3:image:BucketName"] ?? throw new ArgumentNullException("S3__Image__BucketName");
+                TxtAccessKeyId = config["S3:txt:AccessKeyId"] ?? throw new ArgumentNullException("S3__txt__AccessKeyId");
+                TxtSecretAccessKey = config["S3:txt:SecretAccessKey"] ?? throw new ArgumentNullException("S3__txt__SecretAccessKey");
+                TxtStorageUrl = config["S3:txt:StorageUrl"] ?? throw new ArgumentNullException("S3__txt__StorageUrl");
+                TxtPublicUrl = config["S3:txt:PublicUrl"] ?? throw new ArgumentNullException("S3__txt__PublicUrl");
+                TxtBucketName = config["S3:txt:BucketName"] ?? throw new ArgumentNullException("S3__txt__BucketName");
             }
         }
     }

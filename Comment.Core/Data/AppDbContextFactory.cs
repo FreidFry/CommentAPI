@@ -9,7 +9,7 @@ namespace Comment.Core.Data
         {
             var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
 
-            optionsBuilder.UseNpgsql("Server=localhost;Database=CommentDB;Username=sa;Password=password");
+            optionsBuilder.UseNpgsql("Host=localhost;Database=CommentDB;Username=sa;Password=password");
 
             return new AppDbContext(optionsBuilder.Options);
         }

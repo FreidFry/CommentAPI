@@ -54,7 +54,12 @@ namespace Comment.Infrastructure.Services
                     Key = key,
                     InputStream = stream,
                     ContentType = contentType,
+#if DEBUG
+                    CannedACL = S3CannedACL.PublicRead,
+#endif
+#if RELEASE
                     DisablePayloadSigning = true
+#endif
                 };
                 await transferUtility.UploadAsync(uploadRequest, cancellationToken);
                 sw.Stop();
@@ -97,7 +102,12 @@ namespace Comment.Infrastructure.Services
                     InputStream = stream,
                     BucketName = _apiOptions.TxtBucketName,
                     Key = key,
-                    DisablePayloadSigning = true,
+#if DEBUG
+                    CannedACL = S3CannedACL.PublicRead,
+#endif
+#if RELEASE
+                    DisablePayloadSigning = true
+#endif
                     ContentType = "text/plain; charset=utf-8"
                 };
 
