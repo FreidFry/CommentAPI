@@ -365,3 +365,5 @@ FodyWeavers.xsd
 /FRONTEND_API_DOCUMENTATION.md
 /NET_Entity_framework_SPA_приложение_Комментарии_19_50_14.pdf
 /docker-compose.override.yml
+/data/cache
+/postgres-data/18/docker

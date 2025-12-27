@@ -8,7 +8,6 @@ namespace CommentAPI.Extencions.LoadModules
         {
             services.AddAutoMapper(cfg => cfg.AddMaps(
                 typeof(UserMapProfile).Assembly));
-                //typeof(UserMapProfile), typeof(CommentMapProfile), typeof(ThreadsMapProfile)));
             return services;
         }
     }

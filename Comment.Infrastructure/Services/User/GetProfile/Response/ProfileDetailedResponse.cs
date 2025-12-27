@@ -5,6 +5,7 @@ namespace Comment.Infrastructure.Services.User.GetProfile.Response
     public record ProfileDetailedResponse
     {
         public string UserName { get; set; }
+        public string Email { get; set; }
         public string AvatarTumbnailUrl { get; set; }
         public DateTime CreatedAt { get; set; }
         public string HomePage { get; set; }

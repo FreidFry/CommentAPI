@@ -20,12 +20,6 @@ namespace CommentAPI.Controllers
         {
             return await _getProfileHandler.Handle(request, HttpContext, cancellationToken);
         }
-
-        //[HttpPut("avatar")]
-        //public async Task<IActionResult> UpdateAvatar([FromBody] UserUpdateAvatarDTO dto, CancellationToken cancellationToken)
-        //{
-        //    return await _userService.UpdateProfileAvatarAsync(dto, HttpContext, cancellationToken);
-        //}
     }
 }
 

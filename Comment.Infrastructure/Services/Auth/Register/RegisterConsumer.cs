@@ -53,7 +53,7 @@ namespace Comment.Infrastructure.Services.Auth.Register
                 return;
             }
 
-            var newUser = new UserModel(context.Message.UserName, context.Message.Email, _passwordHasher.HashPassword(context.Message.Password));
+            var newUser = new UserModel(context.Message.UserName, context.Message.Email, _passwordHasher.HashPassword(context.Message.Password), context.Message.HomePage);
 
             await _appDbContext.Users.AddAsync(newUser);
             await _appDbContext.SaveChangesAsync(context.CancellationToken);

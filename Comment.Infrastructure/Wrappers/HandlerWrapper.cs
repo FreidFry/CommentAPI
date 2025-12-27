@@ -62,7 +62,7 @@ namespace Comment.Infrastructure.Wrappers
                     sw.Stop();
                     var traceId = Activity.Current?.Id ?? "n/a";
                     _logger.LogError(ex, "Unhandled Exception in {ActionName} | TraceId: {TraceId}", actionName, traceId);
-                    return new ObjectResult(new { error = "Internal error", details = ex.Message }) { StatusCode = 500 };
+                    return new ObjectResult(new { error = "Internal error" }) { StatusCode = 500 };
                 }
             }
         }

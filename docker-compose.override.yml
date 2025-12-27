@@ -34,10 +34,14 @@
     networks:
       - localstack-net
     depends_on:
-      - database
-      - localstack
-      - redis
-      - rabbit
+      database:
+        condition: service_started
+      rabbit:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_started
 
   worker:
     environment:
