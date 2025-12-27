@@ -58,7 +58,7 @@ namespace Comment.Infrastructure.Services
                     CannedACL = S3CannedACL.PublicRead,
 #endif
 #if RELEASE
-                    DisablePayloadSigning = true
+                    DisablePayloadSigning = true,
 #endif
                 };
                 await transferUtility.UploadAsync(uploadRequest, cancellationToken);
@@ -106,7 +106,7 @@ namespace Comment.Infrastructure.Services
                     CannedACL = S3CannedACL.PublicRead,
 #endif
 #if RELEASE
-                    DisablePayloadSigning = true
+                    DisablePayloadSigning = true,
 #endif
                     ContentType = "text/plain; charset=utf-8"
                 };
