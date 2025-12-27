@@ -1,0 +1,161 @@
+﻿services:
+  api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_HTTPS_PORTS=8081
+      - JWT__AUDIENCE=F4Labs
+      - JWT__EXPIRES_DAYS=3
+      - JWT__ISSUER=F4Labs
+      - ConnectionStrings__DefaultConnection=Host=database;Port=5432;Database=CommentDB;Username=sa;Password=password
+      - JWT__SECRET_KEY=YAMETEKIDASAIIIIYAMETEKIDASAIIII
+      - Kestrel__httpDomen=http://localhost:5173
+      - Kestrel__httpDomenSecure=https://localhost:5173
+      - Kestrel__CertBase64=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
+      - Kestrel__CertPassword=4OEliJvjH6YsAZAF-eM_g9GDR9SwYkraqUubIco6
+      - DB__DbName=CommentDB
+      - DB__User=sa
+      - DB__Password=password
+      - DB__Server=database
+      - DB__Port=5432
+      - RabbitMq__ConnectString=amqp://user:password@rabbit:5672
+      - Redis__ConnectString=redis:6379
+      - Redis__DataInstanceName=data
+      - Redis__CapchaInstanceName=Capcha
+      - PORT=8080
+    ports:
+      - "8080"
+      - "8081"
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
+      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+    networks:
+      - localstack-net
+    depends_on:
+      - database
+      - localstack
+      - redis
+      - rabbit
+
+  worker:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - S3__image__AccessKeyId=DEVELOP_AWS_ACCESS_KEY_ID
+      - S3__image__BucketName=image
+      - S3__image__SecretAccessKey=DEVELOP_AWS_SECRET_ACCESS_KEY
+      - S3__image__PublicUrl=http://localstack:4566
+      - S3__image__StorageUrl=http://localstack:4566
+      - S3__txt__AccessKeyId=DEVELOP_AWS_ACCESS_KEY_ID
+      - S3__txt__BucketName=txt
+      - S3__txt__SecretAccessKey=DEVELOP_AWS_SECRET_ACCESS_KEY
+      - S3__txt__PublicUrl=http://localstack:4566
+      - S3__txt__StorageUrl=http://localstack:4566
+      - DB__DbName=CommentDB
+      - DB__User=sa
+      - DB__Password=password
+      - DB__Server=database
+      - DB__Port=5432
+      - RabbitMq__ConnectString=amqp://user:password@rabbit:5672
+      - Redis__ConnectString=redis:6379
+      - Redis__DataInstanceName=data
+      - Redis__CapchaInstanceName=Capcha
+      - PORT=8080
+    networks:
+      - localstack-net
+    depends_on:
+      database:
+        condition: service_started
+      rabbit:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_started
+
+  localstack:
+    container_name: "${LOCALSTACK_DOCKER_NAME-localstack}"
+    image: localstack/localstack:latest
+    hostname: localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - DEBUG=1
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=DEVELOP_AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY=DEVELOP_AWS_SECRET_ACCESS_KEY
+      - EXTRA_CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+      - EXTRA_CORS_ALLOWED_HEADERS=*
+    volumes:
+      - ./data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint: >
+      sh -c "
+      /usr/local/bin/docker-entrypoint.sh & 
+      awslocal s3 mb s3://image;
+      awslocal s3 mb s3://txt;
+      echo '--- BUCKETS CREATED SUCCESSFULLY ---';
+      wait"
+    networks:
+      - localstack-net
+
+  database:
+    image: postgres:18.1-alpine3.23
+    container_name: comment-db
+    environment:
+      - POSTGRES_USER=sa
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=CommentDB
+    ports:
+      - "5432:5432"
+    networks:
+      - localstack-net
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    networks:
+      - localstack-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s     
+      timeout: 5s       
+      retries: 5        
+      start_period: 5s
+
+  rabbit:
+    image: rabbitmq:4.2.2-alpine
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=password
+      - RABBITMQ_DEFAULT_VHOST=/
+    ports:
+      - "15691:15691"
+      - "15692:15692"
+      - "25672:25672"
+      - "4369:4369"
+      - "5671:5671"
+      - "5672:5672"
+    volumes:
+    - ./init-rabbit.sh:/etc/rabbitmq/init-rabbit.sh
+    entrypoint: >
+      sh -c "sh /etc/rabbitmq/init-rabbit.sh & docker-entrypoint.sh rabbitmq-server"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - localstack-net
+
+
+networks:
+  localstack-net:
+    driver: bridge
+  
+  
