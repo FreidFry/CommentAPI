@@ -30,12 +30,12 @@ namespace Comment.Infrastructure.Services.Comment.CreateComment
         public async Task<IActionResult> Handle(CommentCreateRequest request, HttpContext httpContext, CancellationToken cancellationToken)
             => await SafeExecute(async () =>
             {
-                var CaptchaResponse = await _captchaValidateHandler.Handle(new(request.CaptchaId, request.CaptchaValue));
-                if (!CaptchaResponse)
-                {
-                    _logger.LogWarning("Captcha validation failed for CaptchaId: {CaptchaId}", request.CaptchaId);
-                    return new BadRequestObjectResult("Captcha is not valid");
-                }
+                //var CaptchaResponse = await _captchaValidateHandler.Handle(new(request.CaptchaId, request.CaptchaValue));
+                //if (!CaptchaResponse)
+                //{
+                //    _logger.LogWarning("Captcha validation failed for CaptchaId: {CaptchaId}", request.CaptchaId);
+                //    return new BadRequestObjectResult("Captcha is not valid");
+                //}
 
                 var validationResult = await _validator.ValidateAsync(request, cancellationToken);
                 if (!validationResult.IsValid)

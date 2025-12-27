@@ -108,7 +108,7 @@ namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread
                 foreach (var res in results.Where(r => r.HasValue))
                 {
                     var comment = JsonSerializer.Deserialize<CommentViewModel>(res!.ToString());
-                    if (comment != null)
+                    if (comment != null && comment.ParentCommentId == null)
                         finalComments.Add(comment);
                 }
             }
@@ -168,23 +168,9 @@ namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread
             var rootList = query
                .SelectMany(t => t.Comments);
 
-            rootList = request.SortByEnum switch
-            {
-                SortByEnum.Email => request.IsAscending
-                    ? rootList.OrderBy(c => c.User.Email)
-                    : rootList.OrderByDescending(c => c.User.Email),
-                SortByEnum.UserName => request.IsAscending
-                    ? rootList.OrderBy(c => c.User.UserName)
-                    : rootList.OrderByDescending(c => c.User.UserName),
-                SortByEnum.CreateAt => request.IsAscending
-                    ? rootList.OrderBy(c => c.CreatedAt)
-                    : rootList.OrderByDescending(c => c.CreatedAt),
-                _ => request.IsAscending
-                    ? rootList.OrderBy(c => c.CreatedAt)
-                    : rootList.OrderByDescending(c => c.CreatedAt)
-            };
+            rootList = rootList
+               .Where(c => c.ParentDepth == 0 && !c.IsDeleted && !c.IsBaned);
 
-            rootList = rootList.Where(c => c.ParentDepth == 0 && !c.IsDeleted && !c.IsBaned);
 
             if (!string.IsNullOrEmpty(after))
             {
@@ -204,6 +190,22 @@ namespace Comment.Infrastructure.Services.Comment.GetCommentsByThread
                         : rootList.Where(c => c.CreatedAt < DateTime.Parse(after).ToUniversalTime())
                 };
             }
+
+            rootList = request.SortByEnum switch
+            {
+                SortByEnum.Email => request.IsAscending
+                    ? rootList.OrderBy(c => c.User.Email)
+                    : rootList.OrderByDescending(c => c.User.Email),
+                SortByEnum.UserName => request.IsAscending
+                    ? rootList.OrderBy(c => c.User.UserName)
+                    : rootList.OrderByDescending(c => c.User.UserName),
+                SortByEnum.CreateAt => request.IsAscending
+                    ? rootList.OrderBy(c => c.CreatedAt)
+                    : rootList.OrderByDescending(c => c.CreatedAt),
+                _ => request.IsAscending
+                    ? rootList.OrderBy(c => c.CreatedAt)
+                    : rootList.OrderByDescending(c => c.CreatedAt)
+            };
 
             var comments = await rootList
                 .Take(need)

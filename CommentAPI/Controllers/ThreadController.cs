@@ -81,7 +81,7 @@ namespace CommentAPI.Controllers
             return await _createThreadHandler.Handle(dto, HttpContext, cancellationToken);
         }
 
-        [HttpPut("{threadId}")]
+        [HttpPut("{threadId}/update")]
         [Authorize]
         [SwaggerOperation(
             Summary = "Update Thread",

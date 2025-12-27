@@ -3,12 +3,15 @@ using AutoMapper.QueryableExtensions;
 using Comment.Core.Data;
 using Comment.Infrastructure.CommonDTOs;
 using Comment.Infrastructure.Interfaces;
+using Comment.Infrastructure.Services.Thread.DTOs;
 using Comment.Infrastructure.Services.Thread.GetDetailedThread.Response;
 using Comment.Infrastructure.Services.Thread.UpdateThread.Request;
 using Comment.Infrastructure.Services.Thread.UpdateThread.Response;
 using FluentValidation;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
+using System.Text.Json;
 
 namespace Comment.Infrastructure.Services.Thread.UpdateThread
 {
@@ -18,13 +21,15 @@ namespace Comment.Infrastructure.Services.Thread.UpdateThread
         private readonly IValidator<UpdateThreadRequestDTO> _updateValidator;
         private readonly IMapper _mapper;
         private readonly IHtmlSanitize _htmlSanitizer;
+        private readonly IDatabase _redis;
 
-        public ThreadUpdateConsumer(AppDbContext context, IMapper mapper, IValidator<UpdateThreadRequestDTO> updateValidator, IHtmlSanitize htmlSanitizer)
+        public ThreadUpdateConsumer(AppDbContext context, IMapper mapper, IValidator<UpdateThreadRequestDTO> updateValidator, IHtmlSanitize htmlSanitizer, IConnectionMultiplexer connectionMultiplexer)
         {
             _appDbContext = context;
             _mapper = mapper;
             _updateValidator = updateValidator;
             _htmlSanitizer = htmlSanitizer;
+            _redis = connectionMultiplexer.GetDatabase();
         }
 
         /// <summary>
@@ -89,12 +94,23 @@ namespace Comment.Infrastructure.Services.Thread.UpdateThread
             _appDbContext.Threads.Update(thread);
             await _appDbContext.SaveChangesAsync(cancellationToken);
 
+            await context.RespondAsync(new UpdateThreadSucces(updatedTitle, updatedContext));
+
             var threadDto = await _appDbContext.Threads
+                .AsNoTracking()
+                .Include(t => t.OwnerUser)
                 .Where(t => t.Id == thread.Id)
-                .ProjectTo<DetailedThreadResponse>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(cancellationToken);
 
-            await context.RespondAsync(new UpdateThreadSucces(updatedTitle, updatedContext));
+            var view = _mapper.Map<ThreadsResponseViewModel>(threadDto);
+            var detail = _mapper.Map<DetailedThreadResponse>(threadDto);
+
+            var bath = _redis.CreateBatch();
+
+            bath.StringSetAsync($"thread:{view.Id}:preview", JsonSerializer.Serialize(view), TimeSpan.FromHours(1));
+            bath.StringSetAsync($"thread:{view.Id}:details", JsonSerializer.Serialize(detail), TimeSpan.FromHours(1));
+
+            bath.Execute();
         }
     }
 }

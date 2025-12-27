@@ -5,6 +5,7 @@ using FluentValidation;
 
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 
 namespace Comment.Infrastructure.Services.Thread.DeleteThread
 {
@@ -12,10 +13,12 @@ namespace Comment.Infrastructure.Services.Thread.DeleteThread
     {
         private readonly AppDbContext _appDbContext;
         private readonly IValidator<DeleteThreadRequestDTO> _validator;
-        public DeleteThreadConsumer(AppDbContext appDbContext, IValidator<DeleteThreadRequestDTO> validator)
+        private readonly IDatabase _redisDb;
+        public DeleteThreadConsumer(AppDbContext appDbContext, IValidator<DeleteThreadRequestDTO> validator, IConnectionMultiplexer connectionMultiplexer)
         {
             _appDbContext = appDbContext;
             _validator = validator;
+            _redisDb = connectionMultiplexer.GetDatabase();
         }
 
         /// <summary>
@@ -76,8 +79,17 @@ namespace Comment.Infrastructure.Services.Thread.DeleteThread
             _appDbContext.Entry(thread).Property("IsDeleted").CurrentValue = true;
             thread.LastUpdatedAt = DateTime.UtcNow;
 
+            var key = $"thread:{thread.Id}:preview";
+            var detailedThreadKey = $"thread:{thread.Id}:details";
+
+
             _appDbContext.Threads.Update(thread);
             await _appDbContext.SaveChangesAsync(cancellationToken);
+
+            var bath = _redisDb.CreateBatch();
+            bath.KeyDeleteAsync(key);
+            bath.KeyDeleteAsync(detailedThreadKey);
+            bath.Execute();
 
             await context.RespondAsync(new StatusCodeResponse("Delete success.", 204));
         }

@@ -4,6 +4,7 @@ using Comment.Infrastructure.Services.Comment.DeleteComment.Request;
 using FluentValidation;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 
 namespace Comment.Infrastructure.Services.Comment.DeleteComment
 {
@@ -11,11 +12,13 @@ namespace Comment.Infrastructure.Services.Comment.DeleteComment
     {
         private readonly AppDbContext _appDbContext;
         private readonly IValidator<DeleteCommentRequestDTO> _validator;
+        private readonly IDatabase _RedisDb;
 
-        public DeleteCommentConsumer(AppDbContext appDbContext, IValidator<DeleteCommentRequestDTO> validator)
+        public DeleteCommentConsumer(AppDbContext appDbContext, IValidator<DeleteCommentRequestDTO> validator, IConnectionMultiplexer connectionMultiplexer)
         {
             _appDbContext = appDbContext;
             _validator = validator;
+            _RedisDb = connectionMultiplexer.GetDatabase();
         }
 
         /// <summary>
@@ -62,6 +65,8 @@ namespace Comment.Infrastructure.Services.Comment.DeleteComment
                 await context.RespondAsync(new StatusCodeResponse("Unauthorized.", 403));
                 return;
             }
+
+            await _RedisDb.KeyDeleteAsync($"comment:{comment.Id}");
 
             comment.MarkAsDeleted();
             _appDbContext.Comments.Update(comment);

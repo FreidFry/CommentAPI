@@ -1,4 +1,5 @@
-﻿using Comment.Core.Data;
+﻿using AutoMapper;
+using Comment.Core.Data;
 using Comment.Infrastructure.CommonDTOs;
 using Comment.Infrastructure.Interfaces;
 using Comment.Infrastructure.Services.Comment.DTOs.Request;
@@ -6,6 +7,8 @@ using Comment.Infrastructure.Services.Comment.DTOs.Response;
 using FluentValidation;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
+using System.Text.Json;
 
 namespace Comment.Infrastructure.Services.Comment.UpdateComment
 {
@@ -13,10 +16,14 @@ namespace Comment.Infrastructure.Services.Comment.UpdateComment
     {
         private readonly AppDbContext _appDbContext;
         private readonly IHtmlSanitize _htmlSanitizer;
-        public UpdateCommentConsumer(AppDbContext appDbContext, IHtmlSanitize htmlSanitize)
+        private readonly IMapper _mapper;
+        private readonly IDatabase _redis;
+        public UpdateCommentConsumer(AppDbContext appDbContext, IHtmlSanitize htmlSanitize, IConnectionMultiplexer connectionMultiplexer, IMapper mapper)
         {
             _appDbContext = appDbContext;
             _htmlSanitizer = htmlSanitize;
+            _redis = connectionMultiplexer.GetDatabase();
+            _mapper = mapper;
         }
 
         /// <summary>
@@ -55,6 +62,8 @@ namespace Comment.Infrastructure.Services.Comment.UpdateComment
             var cancellationToken = context.CancellationToken;
 
             var comment = await _appDbContext.Comments
+                .AsNoTracking()
+                .Include(c => c.User)
                 .FirstOrDefaultAsync(c => c.Id == dto.CommentId && !c.IsDeleted, cancellationToken);
 
             if (comment == null)
@@ -72,6 +81,10 @@ namespace Comment.Infrastructure.Services.Comment.UpdateComment
             comment.UpdateContent(_htmlSanitizer.Sanitize(dto.Content));
             _appDbContext.Comments.Update(comment);
             await _appDbContext.SaveChangesAsync(cancellationToken);
+
+            var commentViewModel = _mapper.Map<CommentViewModel>(comment);
+
+            await _redis.StringSetAsync($"comment:{comment.Id}", JsonSerializer.Serialize(commentViewModel));
 
             var commentDto = await _appDbContext.Comments
                 .Where(c => c.Id == comment.Id)
