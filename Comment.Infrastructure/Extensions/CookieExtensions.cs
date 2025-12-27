@@ -25,6 +25,14 @@ namespace Comment.Infrastructure.Extensions
             SetPartitionedCookie(http);
         }
 
+        public static void RemoveJwtCookie(HttpContext http)
+        {
+            var expiration = new DateTime(0);
+
+            AppendSecureCookie(http, "jwt", "", expiration);
+            SetPartitionedCookie(http);
+        }
+
         /// <summary>
         /// Appends multiple cookies from a string array formatted as "key|value".
         /// </summary>

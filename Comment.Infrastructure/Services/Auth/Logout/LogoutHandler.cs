@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using static Comment.Infrastructure.Extensions.CookieExtensions;
 
 namespace Comment.Infrastructure.Services.Auth.Logout
 {
@@ -6,7 +7,7 @@ namespace Comment.Infrastructure.Services.Auth.Logout
     {
         public void Handle(HttpContext httpContext)
         {
-            httpContext.Response.Cookies.Delete("jwt");
+            RemoveJwtCookie(httpContext);
         }
     }
 }

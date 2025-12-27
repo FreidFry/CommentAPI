@@ -79,7 +79,7 @@
     image: localstack/localstack:latest
     hostname: localstack
     ports:
-      - "4566:4566"
+      - "4566"
     environment:
       - SERVICES=s3
       - DEBUG=1
@@ -109,7 +109,7 @@
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=CommentDB
     ports:
-      - "5432:5432"
+      - "5432"
     networks:
       - localstack-net
     volumes:
@@ -118,14 +118,14 @@
   redis:
     image: redis:latest
     ports:
-      - "6379:6379"
+      - "6379"
     networks:
       - localstack-net
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s     
-      timeout: 5s       
-      retries: 5        
+      interval: 10s
+      timeout: 5s
+      retries: 5
       start_period: 5s
 
   rabbit:
@@ -135,12 +135,12 @@
       - RABBITMQ_DEFAULT_PASS=password
       - RABBITMQ_DEFAULT_VHOST=/
     ports:
-      - "15691:15691"
-      - "15692:15692"
-      - "25672:25672"
-      - "4369:4369"
-      - "5671:5671"
-      - "5672:5672"
+      - "15691"
+      - "15692"
+      - "25672"
+      - "4369"
+      - "5671"
+      - "5672"
     volumes:
     - ./init-rabbit.sh:/etc/rabbitmq/init-rabbit.sh
     entrypoint: >
